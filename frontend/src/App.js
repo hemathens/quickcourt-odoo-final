@@ -1,6 +1,8 @@
 import React, { useState, createContext, useContext, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
+import { auth, googleProvider } from './lib/firebase';
 
 const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000/api';
 
@@ -126,14 +128,6 @@ const mockBookings = [
 const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }) => {
   const { role } = currentUser || {};
 
-  const handleRoleSwitch = (newRole) => {
-    const user = mockUsers.find(u => u.role === newRole);
-    setCurrentUser(user);
-    if (newRole === 'user') setCurrentPage('home');
-    else if (newRole === 'facility_owner') setCurrentPage('owner-dashboard');
-    else if (newRole === 'admin') setCurrentPage('admin-dashboard');
-  };
-
   return (
     <nav className="nav-enhanced">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -149,21 +143,7 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
             </div>
           </div>
           
-          {/* Role Switch */}
-          <div className="hidden md:block">
-            <div className="flex items-center space-x-3">
-              <span className="text-sm text-gray-500 font-medium">View as:</span>
-              <select 
-                value={role || 'user'} 
-                onChange={(e) => handleRoleSwitch(e.target.value)}
-                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="user">End User</option>
-                <option value="facility_owner">Facility Owner</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-          </div>
+          {/* Role switch removed: roles are chosen at sign-in only */}
 
           {/* Navigation Menu */}
           <div className="hidden md:block">
@@ -194,6 +174,33 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
                 </>
               )}
             </div>
+          </div>
+
+          {/* Auth */}
+          <div className="hidden md:block">
+            {currentUser ? (
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      await signOut(auth).catch(() => {});
+                    } catch {}
+                    setCurrentUser(null);
+                    window.dispatchEvent(new CustomEvent('navigate', { detail: 'signin' }));
+                  }}
+                  className="text-sm text-red-600 hover:text-red-700 font-medium"
+                >
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate', { detail: 'signin' }))}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Sign in
+              </button>
+            )}
           </div>
 
           <div
@@ -1683,40 +1690,300 @@ const LearnMorePage = ({ setCurrentPage }) => {
   );
 };
 
-// Sign In Page (lightweight, uses mock users)
+// Sign In Page with Google OAuth (keeps role switch for demo accounts)
 const SignInPage = ({ setCurrentPage, setCurrentUser }) => {
-  const [selectedRole, setSelectedRole] = useState('user');
-  const handleSignIn = () => {
-    const user = mockUsers.find(u => u.role === selectedRole) || mockUsers[0];
-    setCurrentUser(user);
+  const [selectedRole, setSelectedRole] = useState(() => {
+    try { return localStorage.getItem('qc_role') || 'user'; } catch { return 'user'; }
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [mode, setMode] = useState('signup');
+  const [signup, setSignup] = useState({ firstName: '', lastName: '', email: '', password: '', confirm: '' });
+  const [signupError, setSignupError] = useState('');
+  const [login, setLogin] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [showPw2, setShowPw2] = useState(false);
+
+  const handleDemoSignIn = () => {
+    const user = mockUsers.find((u) => u.role === selectedRole) || mockUsers[0];
+    // lock role selection post sign-in
+    setCurrentUser({ ...user, role: selectedRole });
     if (selectedRole === 'user') setCurrentPage('home');
     else if (selectedRole === 'facility_owner') setCurrentPage('owner-dashboard');
     else setCurrentPage('admin-dashboard');
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      setSubmitting(true);
+      try { localStorage.setItem('qc_role', selectedRole); } catch {}
+      if (window?.location?.hostname === '127.0.0.1') {
+        const url = window.location.href.replace('127.0.0.1', 'localhost');
+        window.location.replace(url);
+        return;
+      }
+      let result;
+      try {
+        result = await signInWithPopup(auth, googleProvider);
+      } catch (popupErr) {
+        // Fallback for popup blockers: use redirect flow
+        await signInWithRedirect(auth, googleProvider);
+        return; // the page will redirect; post-redirect handling below
+      }
+      const firebaseUser = result.user;
+      const chosenRole = (localStorage.getItem('qc_role') || selectedRole || 'user');
+      const nextUser = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'Google User',
+        email: firebaseUser.email || '',
+        avatar: firebaseUser.photoURL || '',
+        role: chosenRole,
+        provider: 'google',
+      };
+      setCurrentUser(nextUser);
+      if (chosenRole === 'facility_owner') setCurrentPage('owner-dashboard');
+      else if (chosenRole === 'admin') setCurrentPage('admin-dashboard');
+      else setCurrentPage('home');
+    } catch (err) {
+      // Basic inline alert for now to stay minimal
+      // eslint-disable-next-line no-alert
+      alert('Google sign-in failed. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEmailSignup = async (e) => {
+    e.preventDefault();
+    setSignupError('');
+    const name = `${signup.firstName || ''} ${signup.lastName || ''}`.trim();
+    if (!signup.firstName.trim() || !signup.lastName.trim() || !signup.email.trim() || signup.password.length < 6) {
+      setSignupError('Fill first name, last name, valid email, and password (6+ chars).');
+      return;
+    }
+    if (signup.password !== signup.confirm) {
+      setSignupError('Passwords do not match');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const res = await axios.post(`${API_BASE}/auth/signup`, { name, email: signup.email, password: signup.password });
+      const u = res.data;
+      const chosenRole = selectedRole || 'user';
+      const nextUser = { id: u.id, name: u.name, email: u.email, role: chosenRole, provider: 'email' };
+      setCurrentUser(nextUser);
+      if (chosenRole === 'facility_owner') setCurrentPage('owner-dashboard');
+      else if (chosenRole === 'admin') setCurrentPage('admin-dashboard');
+      else setCurrentPage('home');
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Signup failed';
+      setSignupError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEmailLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    if (!login.email.trim() || !login.password) {
+      setLoginError('Enter email and password.');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const res = await axios.post(`${API_BASE}/auth/login`, login);
+      const u = res.data;
+      const nextUser = { id: u.id, name: u.name, email: u.email, role: selectedRole || 'user', provider: 'email' };
+      setCurrentUser(nextUser);
+      if (selectedRole === 'facility_owner') setCurrentPage('owner-dashboard');
+      else if (selectedRole === 'admin') setCurrentPage('admin-dashboard');
+      else setCurrentPage('home');
+    } catch (err) {
+      const msg = err?.response?.data?.detail || 'Login failed';
+      setLoginError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle redirect sign-in results
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+          const firebaseUser = result.user;
+          const chosenRole = (localStorage.getItem('qc_role') || 'user');
+          const nextUser = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Google User',
+            email: firebaseUser.email || '',
+            avatar: firebaseUser.photoURL || '',
+            role: chosenRole,
+            provider: 'google',
+          };
+          setCurrentUser(nextUser);
+          if (chosenRole === 'facility_owner') setCurrentPage('owner-dashboard');
+          else if (chosenRole === 'admin') setCurrentPage('admin-dashboard');
+          else setCurrentPage('home');
+          try { localStorage.removeItem('qc_role'); } catch {}
+        }
+      } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    try { localStorage.setItem('qc_role', selectedRole); } catch {}
+  }, [selectedRole]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white rounded-xl shadow p-8 w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Sign in to QuickCourt</h1>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Continue as</label>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="user">End User</option>
-              <option value="facility_owner">Facility Owner</option>
-              <option value="admin">Admin</option>
-            </select>
+      <div className="w-full max-w-xl">
+        <div className="mb-4 text-center">
+          <div className="flex justify-center mb-3">
+            <div className="grid grid-cols-3 gap-2">
+              {['admin','user','facility_owner'].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setSelectedRole(r === 'user' ? 'user' : r)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border ${selectedRole===r || (r==='user' && selectedRole==='user') ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                >
+                  {r === 'user' ? 'End User' : r.replace('_',' ')}
+                </button>
+              ))}
+            </div>
           </div>
+          <h1 className="text-3xl font-extrabold text-gray-900">{mode === 'signup' ? 'Join QuickCourt' : 'Welcome Back'}</h1>
+          <p className="text-sm text-gray-600 mt-1">{mode === 'signup' ? 'Create your account to start booking courts' : 'Sign in to continue your journey'}</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6">
           <button
-            onClick={handleSignIn}
-            className="w-full btn-primary-enhanced"
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={submitting}
+            className="w-full btn-secondary-enhanced flex items-center justify-center gap-2 py-3 mb-4"
           >
-            Sign In
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48">
+              <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.623 31.91 29.227 35 24 35c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.869 5.053 29.7 3 24 3 12.955 3 4 11.955 4 23s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"/>
+              <path fill="#FF3D00" d="M6.306 14.691l6.571 4.817C14.39 16.151 18.861 13 24 13c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.869 5.053 29.7 3 24 3 16.318 3 9.656 7.337 6.306 14.691z"/>
+              <path fill="#4CAF50" d="M24 43c5.166 0 9.86-1.977 13.409-5.197l-6.19-5.238C29.13 34.091 26.715 35 24 35c-5.202 0-9.577-3.071-11.287-7.399l-6.48 5.002C9.51 39.556 16.227 43 24 43z"/>
+              <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.03 12.03 0 01-4.093 5.565l.003-.002 6.19 5.238C36.971 39.205 44 34 44 23c0-1.341-.138-2.651-.389-3.917z"/>
+            </svg>
+            {submitting ? 'Signing in…' : 'Continue with Google'}
           </button>
+
+          {mode === 'signup' ? (
+            <form className="space-y-4" onSubmit={handleEmailSignup}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input
+                    type="text"
+                    value={signup.firstName}
+                    onChange={(e) => setSignup((s) => ({ ...s, firstName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="John"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    value={signup.lastName}
+                    onChange={(e) => setSignup((s) => ({ ...s, lastName: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={signup.email}
+                  onChange={(e) => setSignup((s) => ({ ...s, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={signup.password}
+                  onChange={(e) => setSignup((s) => ({ ...s, password: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+                <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-3 top-9 text-gray-500">
+                  {showPw ? '🙈' : '👁️'}
+                </button>
+              </div>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input
+                  type={showPw2 ? 'text' : 'password'}
+                  value={signup.confirm}
+                  onChange={(e) => setSignup((s) => ({ ...s, confirm: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  placeholder="••••••••"
+                />
+                <button type="button" onClick={() => setShowPw2((v) => !v)} className="absolute right-3 top-9 text-gray-500">
+                  {showPw2 ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {signupError && <p className="text-sm text-red-600">{signupError}</p>}
+              <button type="submit" disabled={submitting} className="w-full btn-primary-enhanced">
+                {submitting ? 'Creating Account…' : 'Create Account'}
+              </button>
+              <p className="text-center text-sm text-gray-600">Already have an account?{' '}
+                <button type="button" onClick={() => setMode('login')} className="text-blue-600 hover:underline">Sign in</button>
+              </p>
+            </form>
+          ) : (
+            <form className="space-y-4" onSubmit={handleEmailLogin}>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  value={login.email}
+                  onChange={(e) => setLogin((s) => ({ ...s, email: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="john@example.com"
+                />
+              </div>
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={login.password}
+                  onChange={(e) => setLogin((s) => ({ ...s, password: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
+                  placeholder="••••••••"
+                />
+                <button type="button" onClick={() => setShowPw((v) => !v)} className="absolute right-3 top-9 text-gray-500">
+                  {showPw ? '🙈' : '👁️'}
+                </button>
+              </div>
+              {loginError && <p className="text-sm text-red-600">{loginError}</p>}
+              <button type="submit" disabled={submitting} className="w-full btn-primary-enhanced">{submitting ? 'Signing In…' : 'Sign In'}</button>
+              <div className="text-center text-sm text-gray-600">
+                <button type="button" className="text-gray-500 mr-2" onClick={() => alert('Reset link flow TBD')}>Forgot your password?</button>
+              </div>
+              <p className="text-center text-sm text-gray-600">Don't have an account?{' '}
+                <button type="button" onClick={() => setMode('signup')} className="text-blue-600 hover:underline">Sign up</button>
+              </p>
+            </form>
+          )}
+        </div>
+
+        <div className="mt-4 text-center">
+          <button onClick={handleDemoSignIn} className="text-xs text-gray-500 hover:text-gray-700">Continue as demo</button>
         </div>
       </div>
     </div>
@@ -3761,7 +4028,10 @@ const ReportsModerationPage = () => {
 
 // Main App Component
 const App = () => {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = typeof window !== 'undefined' ? window.localStorage.getItem('qc_page') : null;
+    return saved || 'home';
+  });
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const raw = localStorage.getItem('qc_user');
@@ -3799,6 +4069,13 @@ const App = () => {
     return () => window.removeEventListener('navigate', handleNavigate);
   }, []);
 
+  // Persist current page to survive refresh and restore landing page
+  useEffect(() => {
+    try {
+      window.localStorage.setItem('qc_page', currentPage);
+    } catch {}
+  }, [currentPage]);
+
   // Persist venues to localStorage so facilities survive refresh
   useEffect(() => {
     try {
@@ -3812,6 +4089,27 @@ const App = () => {
       localStorage.setItem('qc_user', JSON.stringify(currentUser));
     } catch {}
   }, [currentUser]);
+
+  // Handle Firebase redirect result after signInWithRedirect
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getRedirectResult(auth);
+        if (res?.user) {
+          const u = res.user;
+          setCurrentUser({
+            id: u.uid,
+            name: u.displayName || 'Google User',
+            email: u.email || '',
+            avatar: u.photoURL || '',
+            role: 'user',
+            provider: 'google',
+          });
+          setCurrentPage('home');
+        }
+      } catch {}
+    })();
+  }, []);
 
   // Persist availableSports to localStorage when changed
   useEffect(() => {

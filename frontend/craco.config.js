@@ -42,6 +42,17 @@ module.exports = {
         };
       }
       
+      // Force devServer client websocket to connect to the same origin/port (3000)
+      if (!webpackConfig.devServer) webpackConfig.devServer = {};
+      webpackConfig.devServer.client = {
+        ...webpackConfig.devServer.client,
+        webSocketURL: {
+          hostname: 'localhost',
+          port: 3000,
+          protocol: 'ws',
+        },
+      };
+
       return webpackConfig;
     },
   },

@@ -146,6 +146,72 @@ input:focus, select:focus, textarea:focus {
   pointer-events: none;
 }
 
+/* Interactive landing visuals */
+.bg-grid {
+  background-image: linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px;
+}
+
+.hero-blob {
+  position: absolute;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 9999px;
+  filter: blur(42px);
+  background: radial-gradient(closest-side, rgba(59,130,246,0.45), rgba(147,51,234,0.35), transparent 70%);
+  animation: float 10s ease-in-out infinite;
+  opacity: 0.7;
+}
+
+.hero-blob.secondary {
+  background: radial-gradient(closest-side, rgba(16,185,129,0.45), rgba(59,130,246,0.35), transparent 70%);
+  animation-duration: 12s;
+}
+
+.tilt-hover {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tilt-hover:hover {
+  transform: translateY(-4px) rotateX(2deg) rotateY(-2deg);
+  box-shadow: 0 20px 40px -12px rgba(0,0,0,0.18);
+}
+
+.animate-fade-slide {
+  animation: fadeSlide 0.6s ease-out both;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0) translateX(0); }
+  50% { transform: translateY(-18px) translateX(10px); }
+  100% { transform: translateY(0) translateX(0); }
+}
+
+.sports-marquee {
+  display: flex;
+  gap: 24px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sports-marquee .track {
+  display: inline-flex;
+  gap: 24px;
+  animation: marquee 18s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 /* Enhanced button variants */
 .btn-primary-enhanced {
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);

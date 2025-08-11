@@ -2,7 +2,7 @@ from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from pathlib import Path
 from datetime import datetime, date, time as time_cls, timedelta, timezone as tzinfo
 try:
@@ -12,6 +12,7 @@ except Exception:  # pragma: no cover
 import logging
 import os
 import uuid
+from passlib.hash import bcrypt
 
 try:
     # Optional dependency (for environments that provide Mongo)
@@ -120,6 +121,21 @@ class Booking(BaseModel):
     status: str = "confirmed"
     bookingDateTimeUtc: Optional[str] = None
     timezone: Optional[str] = None
+# ---------------------------
+# Auth models (Mongo-backed)
+# ---------------------------
+class SignupCreate(BaseModel):
+    name: str
+    email: EmailStr
+    password: str = Field(min_length=6)
+
+
+class AuthUser(BaseModel):
+    id: str
+    name: str
+    email: EmailStr
+    role: str = "user"
+
 
 
 class BookingCreate(BaseModel):
@@ -628,4 +644,74 @@ app.add_middleware(
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------
+# Auth routes
+# ---------------------------
+@api_router.post("/auth/signup", response_model=AuthUser, status_code=201)
+async def signup(payload: SignupCreate) -> AuthUser:
+    # Prefer MongoDB if available
+    if _motor_available and os.environ.get("MONGO_URL") and os.environ.get("DB_NAME"):
+        try:
+            client = AsyncIOMotorClient(os.environ["MONGO_URL"])  # type: ignore
+            db = client[os.environ["DB_NAME"]]
+            # Unique email check
+            existing = await db.users.find_one({"email": str(payload.email).lower()})
+            if existing:
+                await client.close()
+                raise HTTPException(status_code=409, detail="Email already registered")
+
+            doc = {
+                "id": str(uuid.uuid4()),
+                "name": payload.name.strip(),
+                "email": str(payload.email).lower(),
+                "password_hash": bcrypt.hash(payload.password),
+                "role": "user",
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            await db.users.insert_one(doc)
+            await client.close()
+            return AuthUser(id=doc["id"], name=doc["name"], email=doc["email"], role="user")
+        except HTTPException:
+            raise
+        except Exception as exc:  # pragma: no cover
+            logger.exception("Signup failed: %s", exc)
+            raise HTTPException(status_code=500, detail="Signup failed")
+
+    # Fallback: store in-memory so the UI remains usable
+    new_id = store.next_user_id()
+    user = User(id=new_id, name=payload.name, email=str(payload.email).lower(), role="user")
+    store.users[new_id] = user
+    return AuthUser(id=str(new_id), name=user.name, email=user.email, role=user.role)
+
+
+class LoginInput(BaseModel):
+    email: EmailStr
+    password: str
+
+
+@api_router.post("/auth/login", response_model=AuthUser)
+async def login(payload: LoginInput) -> AuthUser:
+    # Prefer MongoDB if available
+    if _motor_available and os.environ.get("MONGO_URL") and os.environ.get("DB_NAME"):
+        try:
+            client = AsyncIOMotorClient(os.environ["MONGO_URL"])  # type: ignore
+            db = client[os.environ["DB_NAME"]]
+            row = await db.users.find_one({"email": str(payload.email).lower()})
+            await client.close()
+            if not row or not bcrypt.verify(payload.password, row.get("password_hash", "")):
+                raise HTTPException(status_code=401, detail="Invalid email or password")
+            return AuthUser(id=row.get("id", ""), name=row.get("name", ""), email=row.get("email", ""), role=row.get("role", "user"))
+        except HTTPException:
+            raise
+        except Exception as exc:  # pragma: no cover
+            logger.exception("Login failed: %s", exc)
+            raise HTTPException(status_code=500, detail="Login failed")
+
+    # Fallback to in-memory users (no password check in demo mode)
+    user = next((u for u in store.users.values() if u.email.lower() == str(payload.email).lower()), None)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    return AuthUser(id=str(user.id), name=user.name, email=user.email, role=user.role)
 
