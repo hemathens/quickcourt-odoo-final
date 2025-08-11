@@ -2950,6 +2950,22 @@ const App = () => {
         return <ProfilePage currentUser={currentUser} setCurrentUser={setCurrentUser} />;
       case 'owner-dashboard':
         return <OwnerDashboard />;
+      case 'facility-management':
+        return <FacilityManagementPage venues={venues} setVenues={setVenues} />;
+      case 'court-management':
+        return <CourtManagementPage venues={venues} setVenues={setVenues} />;
+      case 'time-slot-management':
+        return <TimeSlotManagementPage venues={venues} />;
+      case 'booking-overview':
+        return <BookingOverviewPage bookings={bookings} venues={venues} />;
+      case 'admin-dashboard':
+        return <AdminDashboard venues={venues} users={users} bookings={bookings} />;
+      case 'facility-approval':
+        return <FacilityApprovalPage venues={venues} setVenues={setVenues} />;
+      case 'user-management':
+        return <UserManagementPage users={users} setUsers={setUsers} />;
+      case 'reports-moderation':
+        return <ReportsModerationPage />;
       default:
         return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} />;
     }
