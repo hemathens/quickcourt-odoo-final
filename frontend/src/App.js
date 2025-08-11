@@ -2405,152 +2405,210 @@ const AdminDashboard = ({ venues, users, bookings }) => {
   };
 
   const bookingTrends = [
-    { month: 'Jan', bookings: 45 },
-    { month: 'Feb', bookings: 52 },
-    { month: 'Mar', bookings: 48 },
-    { month: 'Apr', bookings: 61 },
-    { month: 'May', bookings: 58 },
-    { month: 'Jun', bookings: 67 }
+    { month: 'Jan', bookings: 45, users: 12 },
+    { month: 'Feb', bookings: 52, users: 18 },
+    { month: 'Mar', bookings: 48, users: 15 },
+    { month: 'Apr', bookings: 61, users: 22 },
+    { month: 'May', bookings: 58, users: 19 },
+    { month: 'Jun', bookings: 67, users: 25 }
   ];
 
   const userRegistrations = [
-    { month: 'Jan', users: 12 },
-    { month: 'Feb', users: 18 },
-    { month: 'Mar', users: 15 },
-    { month: 'Apr', users: 22 },
-    { month: 'May', users: 19 },
-    { month: 'Jun', users: 25 }
+    { month: 'Jan', users: 12, growth: 15 },
+    { month: 'Feb', users: 18, growth: 22 },
+    { month: 'Mar', users: 15, growth: 8 },
+    { month: 'Apr', users: 22, growth: 28 },
+    { month: 'May', users: 19, growth: 12 },
+    { month: 'Jun', users: 25, growth: 18 }
   ];
 
   const facilityApprovals = [
-    { month: 'Jan', approved: 3, rejected: 1 },
-    { month: 'Feb', approved: 5, rejected: 2 },
-    { month: 'Mar', approved: 4, rejected: 1 },
-    { month: 'Apr', approved: 6, rejected: 0 },
-    { month: 'May', approved: 5, rejected: 3 },
-    { month: 'Jun', approved: 8, rejected: 1 }
+    { month: 'Jan', approved: 3, rejected: 1, pending: 2 },
+    { month: 'Feb', approved: 5, rejected: 2, pending: 1 },
+    { month: 'Mar', approved: 4, rejected: 1, pending: 3 },
+    { month: 'Apr', approved: 6, rejected: 0, pending: 2 },
+    { month: 'May', approved: 5, rejected: 3, pending: 1 },
+    { month: 'Jun', approved: 8, rejected: 1, pending: 4 }
+  ];
+
+  const topPerformingVenues = [
+    { name: 'Elite Tennis Club', bookings: 45, revenue: 2250 },
+    { name: 'City Basketball Center', bookings: 38, revenue: 1520 },
+    { name: 'Premier Sports Complex', bookings: 32, revenue: 1120 }
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600">Platform overview and management controls</p>
+          <h1 className="text-4xl font-bold text-gray-900">Platform Analytics</h1>
+          <p className="text-lg text-gray-600 mt-2">Complete overview of platform performance and user activity</p>
         </div>
 
-        {/* KPI Cards */}
+        {/* Enhanced KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.totalUsers}</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-blue-50 to-blue-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600 uppercase tracking-wide">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{kpis.totalUsers}</p>
+                <div className="flex items-center mt-2">
+                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-green-600 font-medium">+15% from last month</span>
+                </div>
               </div>
-              <div className="text-3xl">👥</div>
+              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-green-600">+15% from last month</div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Facility Owners</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.totalFacilityOwners}</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-purple-50 to-purple-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600 uppercase tracking-wide">Facility Owners</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{kpis.totalFacilityOwners}</p>
+                <div className="flex items-center mt-2">
+                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-green-600 font-medium">+8% from last month</span>
+                </div>
               </div>
-              <div className="text-3xl">🏢</div>
+              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-blue-600">+8% from last month</div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.totalBookings}</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-green-50 to-green-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600 uppercase tracking-wide">Total Bookings</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{kpis.totalBookings}</p>
+                <div className="flex items-center mt-2">
+                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-green-600 font-medium">+22% from last month</span>
+                </div>
               </div>
-              <div className="text-3xl">📅</div>
+              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-green-600">+22% from last month</div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Active Courts</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.totalActiveCourts}</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-orange-50 to-orange-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-600 uppercase tracking-wide">Active Courts</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{kpis.totalActiveCourts}</p>
+                <div className="flex items-center mt-2">
+                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-green-600 font-medium">+5% from last month</span>
+                </div>
               </div>
-              <div className="text-3xl">🏟️</div>
+              <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M10.5 3L12 2l1.5 1M21 3H3l1.5 1M21 3l-1.5 1" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-blue-600">+5% from last month</div>
           </div>
         </div>
 
-        {/* Charts */}
+        {/* Charts and Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Booking Activity */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Booking Activity</h2>
-            <div className="space-y-3">
+          <div className="chart-enhanced">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Booking Trends (6 Months)</h2>
+            <div className="space-y-4">
               {bookingTrends.map(data => (
                 <div key={data.month} className="flex items-center">
-                  <div className="w-12 text-sm text-gray-600">{data.month}</div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-4 mx-3">
-                    <div 
-                      className="bg-blue-600 h-4 rounded-full" 
-                      style={{width: `${(data.bookings / 70) * 100}%`}}
-                    ></div>
+                  <div className="w-12 text-sm font-medium text-gray-600">{data.month}</div>
+                  <div className="flex-1 mx-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-500">Bookings</span>
+                      <span className="text-xs font-medium text-gray-900">{data.bookings}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                        style={{width: `${(data.bookings / 70) * 100}%`}}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-8 text-sm font-medium text-gray-900">{data.bookings}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* User Registrations */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">User Registrations</h2>
-            <div className="space-y-3">
+          <div className="chart-enhanced">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">User Growth</h2>
+            <div className="space-y-4">
               {userRegistrations.map(data => (
                 <div key={data.month} className="flex items-center">
-                  <div className="w-12 text-sm text-gray-600">{data.month}</div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-4 mx-3">
-                    <div 
-                      className="bg-green-600 h-4 rounded-full" 
-                      style={{width: `${(data.users / 30) * 100}%`}}
-                    ></div>
+                  <div className="w-12 text-sm font-medium text-gray-600">{data.month}</div>
+                  <div className="flex-1 mx-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-500">New Users</span>
+                      <span className="text-xs font-medium text-gray-900">{data.users}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full transition-all duration-500" 
+                        style={{width: `${(data.users / 30) * 100}%`}}
+                      ></div>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-gray-500">Growth</span>
+                      <span className="text-xs font-medium text-green-600">+{data.growth}%</span>
+                    </div>
                   </div>
-                  <div className="w-8 text-sm font-medium text-gray-900">{data.users}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Facility Approvals */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Facility Approvals</h2>
-            <div className="space-y-3">
+          <div className="chart-enhanced">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Facility Management</h2>
+            <div className="space-y-4">
               {facilityApprovals.map(data => (
-                <div key={data.month} className="space-y-1">
-                  <div className="flex items-center">
-                    <div className="w-12 text-sm text-gray-600">{data.month}</div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-3 mx-3">
-                      <div 
-                        className="bg-green-600 h-3 rounded-full" 
-                        style={{width: `${(data.approved / 10) * 100}%`}}
-                      ></div>
+                <div key={data.month} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-600">{data.month}</span>
+                    <div className="flex space-x-4 text-xs">
+                      <span className="text-green-600">{data.approved} approved</span>
+                      <span className="text-red-600">{data.rejected} rejected</span>
+                      <span className="text-yellow-600">{data.pending} pending</span>
                     </div>
-                    <div className="w-8 text-xs text-green-600">{data.approved}✓</div>
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-12"></div>
-                    <div className="flex-1 bg-gray-200 rounded-full h-2 mx-3">
-                      <div 
-                        className="bg-red-600 h-2 rounded-full" 
-                        style={{width: `${(data.rejected / 10) * 100}%`}}
-                      ></div>
-                    </div>
-                    <div className="w-8 text-xs text-red-600">{data.rejected}✗</div>
+                  <div className="flex space-x-1">
+                    <div 
+                      className="bg-green-500 h-2 rounded-l-full" 
+                      style={{width: `${(data.approved / (data.approved + data.rejected + data.pending)) * 100}%`}}
+                    ></div>
+                    <div 
+                      className="bg-red-500 h-2" 
+                      style={{width: `${(data.rejected / (data.approved + data.rejected + data.pending)) * 100}%`}}
+                    ></div>
+                    <div 
+                      className="bg-yellow-500 h-2 rounded-r-full" 
+                      style={{width: `${(data.pending / (data.approved + data.rejected + data.pending)) * 100}%`}}
+                    ></div>
                   </div>
                 </div>
               ))}
@@ -2560,39 +2618,72 @@ const AdminDashboard = ({ venues, users, bookings }) => {
 
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Pending Facilities */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Facility Approvals</h2>
-            <div className="space-y-3">
-              {venues.filter(v => v.status === 'pending').slice(0, 5).map(venue => (
-                <div key={venue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{venue.name}</h4>
-                    <p className="text-sm text-gray-600">{venue.address}</p>
+          {/* Top Performing Venues */}
+          <div className="card-enhanced p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Top Performing Venues</h2>
+            <div className="space-y-4">
+              {topPerformingVenues.map((venue, index) => (
+                <div key={venue.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-bold text-blue-600">#{index + 1}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{venue.name}</h4>
+                      <p className="text-sm text-gray-600">{venue.bookings} bookings this month</p>
+                    </div>
                   </div>
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                    Pending
-                  </span>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-green-600">${venue.revenue.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">Revenue</div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Recent Bookings */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Bookings</h2>
-            <div className="space-y-3">
-              {bookings.slice(0, 5).map(booking => (
-                <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+          {/* Pending Actions */}
+          <div className="card-enhanced p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Pending Actions</h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
                   <div>
-                    <h4 className="font-medium text-gray-900">{booking.venueName}</h4>
-                    <p className="text-sm text-gray-600">{booking.date} at {booking.time}</p>
+                    <h4 className="font-semibold text-gray-900">Facility Approvals</h4>
+                    <p className="text-sm text-gray-600">1 facility waiting for review</p>
                   </div>
-                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                    ${booking.totalPrice}
-                  </span>
                 </div>
-              ))}
+                <button className="btn-secondary-enhanced text-sm">
+                  Review Now
+                </button>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 bg-red-50 rounded-lg border border-red-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">Reports & Issues</h4>
+                    <p className="text-sm text-gray-600">3 reports need attention</p>
+                  </div>
+                </div>
+                <button className="btn-secondary-enhanced text-sm">
+                  View Reports
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900">User Verifications</h4>
+                    <p className="text-sm text-gray-600">5 users need verification</p>
+                  </div>
+                </div>
+                <button className="btn-secondary-enhanced text-sm">
+                  Verify Users
+                </button>
+              </div>
             </div>
           </div>
         </div>
