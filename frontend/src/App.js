@@ -1308,6 +1308,1608 @@ const OwnerDashboard = () => {
   );
 };
 
+// Facility Management Page Component
+const FacilityManagementPage = ({ venues, setVenues }) => {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingFacility, setEditingFacility] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    address: '',
+    description: '',
+    sportTypes: [],
+    amenities: [],
+    images: []
+  });
+
+  const ownerVenues = venues.filter(v => v.status === 'approved' || v.status === 'pending');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newVenue = {
+      id: Math.max(...venues.map(v => v.id), 0) + 1,
+      ...formData,
+      startingPrice: 50,
+      rating: 0,
+      courts: [],
+      reviews: [],
+      status: 'pending'
+    };
+
+    if (editingFacility) {
+      setVenues(venues.map(v => v.id === editingFacility.id ? { ...v, ...formData } : v));
+      setEditingFacility(null);
+    } else {
+      setVenues([...venues, newVenue]);
+    }
+
+    setShowAddForm(false);
+    setFormData({ name: '', address: '', description: '', sportTypes: [], amenities: [], images: [] });
+    alert(editingFacility ? 'Facility updated!' : 'Facility added for approval!');
+  };
+
+  const handleEdit = (venue) => {
+    setEditingFacility(venue);
+    setFormData({
+      name: venue.name,
+      address: venue.address,
+      description: venue.description,
+      sportTypes: venue.sportTypes,
+      amenities: venue.amenities,
+      images: venue.images
+    });
+    setShowAddForm(true);
+  };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, e.target.result]
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Facility Management</h1>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300"
+          >
+            Add New Facility
+          </button>
+        </div>
+
+        {/* Add/Edit Form Modal */}
+        {showAddForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-screen overflow-y-auto">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                {editingFacility ? 'Edit Facility' : 'Add New Facility'}
+              </h2>
+              <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Facility Name</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <input
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md h-24"
+                    required
+                  />
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Sports Available</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Tennis', 'Basketball', 'Badminton', 'Football', 'Swimming'].map(sport => (
+                      <label key={sport} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.sportTypes.includes(sport)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({...formData, sportTypes: [...formData.sportTypes, sport]});
+                            } else {
+                              setFormData({...formData, sportTypes: formData.sportTypes.filter(s => s !== sport)});
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        {sport}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                  <div className="flex flex-wrap gap-2">
+                    {['Parking', 'Lockers', 'Restrooms', 'Cafe', 'Pro Shop', 'AC', 'Shower'].map(amenity => (
+                      <label key={amenity} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.amenities.includes(amenity)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({...formData, amenities: [...formData.amenities, amenity]});
+                            } else {
+                              setFormData({...formData, amenities: formData.amenities.filter(a => a !== amenity)});
+                            }
+                          }}
+                          className="mr-2"
+                        />
+                        {amenity}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Photos</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageUpload}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                  {formData.images.length > 0 && (
+                    <div className="mt-2 grid grid-cols-4 gap-2">
+                      {formData.images.map((img, index) => (
+                        <img key={index} src={img} alt={`Upload ${index + 1}`} className="w-full h-16 object-cover rounded" />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end space-x-2 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setEditingFacility(null);
+                      setFormData({ name: '', address: '', description: '', sportTypes: [], amenities: [], images: [] });
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded transition duration-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                  >
+                    {editingFacility ? 'Update' : 'Add'} Facility
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Facilities List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {ownerVenues.map(venue => (
+            <div key={venue.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <img 
+                src={venue.images[0] || 'https://via.placeholder.com/300x200'} 
+                alt={venue.name}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-semibold">{venue.name}</h3>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    venue.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {venue.status}
+                  </span>
+                </div>
+                <p className="text-gray-600 text-sm mb-2">{venue.address}</p>
+                <p className="text-gray-700 text-sm mb-3 line-clamp-2">{venue.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className="text-blue-600 font-medium">{venue.courts.length} courts</span>
+                  <button
+                    onClick={() => handleEdit(venue)}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Court Management Page Component
+const CourtManagementPage = ({ venues, setVenues }) => {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedVenue, setSelectedVenue] = useState('');
+  const [editingCourt, setEditingCourt] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    sportType: '',
+    pricePerHour: '',
+    operatingHours: { start: '08:00', end: '22:00' }
+  });
+
+  const ownerVenues = venues.filter(v => v.status === 'approved');
+  const allCourts = ownerVenues.flatMap(venue => 
+    venue.courts.map(court => ({ ...court, venueName: venue.name, venueId: venue.id }))
+  );
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const venueId = parseInt(selectedVenue);
+    const venue = venues.find(v => v.id === venueId);
+    
+    if (!venue) return;
+
+    const newCourt = {
+      id: Math.max(...allCourts.map(c => c.id), 0) + 1,
+      name: formData.name,
+      sportType: formData.sportType,
+      pricePerHour: parseInt(formData.pricePerHour),
+      operatingHours: formData.operatingHours
+    };
+
+    if (editingCourt) {
+      const updatedVenues = venues.map(v => {
+        if (v.id === venueId) {
+          return {
+            ...v,
+            courts: v.courts.map(c => c.id === editingCourt.id ? { ...c, ...newCourt, id: editingCourt.id } : c)
+          };
+        }
+        return v;
+      });
+      setVenues(updatedVenues);
+      setEditingCourt(null);
+    } else {
+      const updatedVenues = venues.map(v => {
+        if (v.id === venueId) {
+          return { ...v, courts: [...v.courts, newCourt] };
+        }
+        return v;
+      });
+      setVenues(updatedVenues);
+    }
+
+    setShowAddForm(false);
+    setFormData({ name: '', sportType: '', pricePerHour: '', operatingHours: { start: '08:00', end: '22:00' } });
+    setSelectedVenue('');
+    alert(editingCourt ? 'Court updated!' : 'Court added!');
+  };
+
+  const handleEdit = (court) => {
+    setEditingCourt(court);
+    setSelectedVenue(court.venueId.toString());
+    setFormData({
+      name: court.name,
+      sportType: court.sportType,
+      pricePerHour: court.pricePerHour.toString(),
+      operatingHours: court.operatingHours || { start: '08:00', end: '22:00' }
+    });
+    setShowAddForm(true);
+  };
+
+  const handleDelete = (court) => {
+    if (window.confirm('Are you sure you want to delete this court?')) {
+      const updatedVenues = venues.map(v => {
+        if (v.id === court.venueId) {
+          return { ...v, courts: v.courts.filter(c => c.id !== court.id) };
+        }
+        return v;
+      });
+      setVenues(updatedVenues);
+      alert('Court deleted!');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Court Management</h1>
+          <button
+            onClick={() => setShowAddForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300"
+          >
+            Add New Court
+          </button>
+        </div>
+
+        {/* Add/Edit Form Modal */}
+        {showAddForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-lg w-full">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                {editingCourt ? 'Edit Court' : 'Add New Court'}
+              </h2>
+              <form onSubmit={handleSubmit}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select Venue</label>
+                    <select
+                      value={selectedVenue}
+                      onChange={(e) => setSelectedVenue(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    >
+                      <option value="">Choose a venue</option>
+                      {ownerVenues.map(venue => (
+                        <option key={venue.id} value={venue.id}>{venue.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Court Name</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Sport Type</label>
+                    <select
+                      value={formData.sportType}
+                      onChange={(e) => setFormData({...formData, sportType: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                    >
+                      <option value="">Select sport</option>
+                      <option value="Tennis">Tennis</option>
+                      <option value="Basketball">Basketball</option>
+                      <option value="Badminton">Badminton</option>
+                      <option value="Football">Football</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Price Per Hour ($)</label>
+                    <input
+                      type="number"
+                      value={formData.pricePerHour}
+                      onChange={(e) => setFormData({...formData, pricePerHour: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      required
+                      min="1"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Opening Time</label>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.start}
+                        onChange={(e) => setFormData({
+                          ...formData, 
+                          operatingHours: {...formData.operatingHours, start: e.target.value}
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Closing Time</label>
+                      <input
+                        type="time"
+                        value={formData.operatingHours.end}
+                        onChange={(e) => setFormData({
+                          ...formData, 
+                          operatingHours: {...formData.operatingHours, end: e.target.value}
+                        })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-end space-x-2 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddForm(false);
+                      setEditingCourt(null);
+                      setFormData({ name: '', sportType: '', pricePerHour: '', operatingHours: { start: '08:00', end: '22:00' } });
+                      setSelectedVenue('');
+                    }}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded transition duration-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                  >
+                    {editingCourt ? 'Update' : 'Add'} Court
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Courts List */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Court</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sport</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Hour</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operating Hours</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {allCourts.map(court => (
+                <tr key={court.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{court.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{court.venueName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{court.sportType}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${court.pricePerHour}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {court.operatingHours?.start || '08:00'} - {court.operatingHours?.end || '22:00'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => handleEdit(court)}
+                      className="text-blue-600 hover:text-blue-900 mr-4"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(court)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Time Slot Management Page Component
+const TimeSlotManagementPage = ({ venues }) => {
+  const [selectedVenue, setSelectedVenue] = useState('');
+  const [selectedCourt, setSelectedCourt] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [blockedSlots, setBlockedSlots] = useState([]);
+  const [maintenanceReason, setMaintenanceReason] = useState('');
+
+  const ownerVenues = venues.filter(v => v.status === 'approved');
+  const selectedVenueData = ownerVenues.find(v => v.id === parseInt(selectedVenue));
+  const availableCourts = selectedVenueData?.courts || [];
+  const selectedCourtData = availableCourts.find(c => c.id === parseInt(selectedCourt));
+
+  const timeSlots = [
+    '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
+    '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00'
+  ];
+
+  const handleSlotToggle = (time) => {
+    const slotKey = `${selectedVenue}-${selectedCourt}-${selectedDate}-${time}`;
+    if (blockedSlots.includes(slotKey)) {
+      setBlockedSlots(blockedSlots.filter(slot => slot !== slotKey));
+    } else {
+      setBlockedSlots([...blockedSlots, slotKey]);
+    }
+  };
+
+  const isSlotBlocked = (time) => {
+    const slotKey = `${selectedVenue}-${selectedCourt}-${selectedDate}-${time}`;
+    return blockedSlots.includes(slotKey);
+  };
+
+  const handleBulkBlock = () => {
+    if (!selectedVenue || !selectedCourt || !maintenanceReason) {
+      alert('Please select venue, court and provide maintenance reason');
+      return;
+    }
+    
+    const confirmed = window.confirm(`Block all remaining time slots for ${selectedCourtData?.name} on ${selectedDate} for: ${maintenanceReason}?`);
+    if (confirmed) {
+      const newBlockedSlots = timeSlots.map(time => 
+        `${selectedVenue}-${selectedCourt}-${selectedDate}-${time}`
+      );
+      setBlockedSlots([...new Set([...blockedSlots, ...newBlockedSlots])]);
+      alert('Time slots blocked for maintenance!');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Time Slot Management</h1>
+
+        {/* Selection Controls */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Venue</label>
+              <select
+                value={selectedVenue}
+                onChange={(e) => {
+                  setSelectedVenue(e.target.value);
+                  setSelectedCourt('');
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="">Choose a venue</option>
+                {ownerVenues.map(venue => (
+                  <option key={venue.id} value={venue.id}>{venue.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Court</label>
+              <select
+                value={selectedCourt}
+                onChange={(e) => setSelectedCourt(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                disabled={!selectedVenue}
+              >
+                <option value="">Choose a court</option>
+                {availableCourts.map(court => (
+                  <option key={court.id} value={court.id}>{court.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Maintenance Reason</label>
+              <input
+                type="text"
+                value={maintenanceReason}
+                onChange={(e) => setMaintenanceReason(e.target.value)}
+                placeholder="e.g., Court cleaning"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+          <div className="mt-4 flex space-x-2">
+            <button
+              onClick={handleBulkBlock}
+              disabled={!selectedVenue || !selectedCourt || !maintenanceReason}
+              className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded transition duration-300"
+            >
+              Block All Remaining Slots
+            </button>
+          </div>
+        </div>
+
+        {/* Time Slot Grid */}
+        {selectedCourt && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Manage Availability - {selectedCourtData?.name} on {selectedDate}
+            </h2>
+            <p className="text-gray-600 mb-6">Click on time slots to toggle availability. Red = Blocked, Green = Available</p>
+            
+            <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
+              {timeSlots.map(time => (
+                <button
+                  key={time}
+                  onClick={() => handleSlotToggle(time)}
+                  className={`p-4 rounded-lg font-medium transition duration-300 ${
+                    isSlotBlocked(time)
+                      ? 'bg-red-100 text-red-800 border-2 border-red-300'
+                      : 'bg-green-100 text-green-800 border-2 border-green-300 hover:bg-green-200'
+                  }`}
+                >
+                  <div className="text-sm font-medium">{time}</div>
+                  <div className="text-xs mt-1">
+                    {isSlotBlocked(time) ? 'Blocked' : 'Available'}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-medium text-gray-900 mb-2">Legend:</h3>
+              <div className="flex space-x-6">
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-green-200 border border-green-300 rounded mr-2"></div>
+                  <span className="text-sm text-gray-600">Available for booking</span>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-4 h-4 bg-red-200 border border-red-300 rounded mr-2"></div>
+                  <span className="text-sm text-gray-600">Blocked for maintenance</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Booking Overview Page Component
+const BookingOverviewPage = ({ bookings, venues }) => {
+  const [filter, setFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('');
+
+  const ownerVenues = venues.filter(v => v.status === 'approved');
+  const ownerVenueIds = ownerVenues.map(v => v.id);
+  const ownerBookings = bookings.filter(booking => ownerVenueIds.includes(booking.venueId));
+
+  const filteredBookings = ownerBookings.filter(booking => {
+    const matchesStatus = filter === 'all' || booking.status === filter;
+    const matchesDate = !dateFilter || booking.date === dateFilter;
+    return matchesStatus && matchesDate;
+  });
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      confirmed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      completed: 'bg-gray-100 text-gray-800'
+    };
+    return `px-3 py-1 rounded-full text-sm font-medium ${styles[status]}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Booking Overview</h1>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="all">All Bookings</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="completed">Completed</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Date</label>
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setFilter('all');
+                  setDateFilter('');
+                }}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded transition duration-300"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bookings Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600">{ownerBookings.length}</div>
+            <div className="text-sm text-gray-600">Total Bookings</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-green-600">
+              {ownerBookings.filter(b => b.status === 'confirmed').length}
+            </div>
+            <div className="text-sm text-gray-600">Confirmed</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-gray-600">
+              {ownerBookings.filter(b => b.status === 'completed').length}
+            </div>
+            <div className="text-sm text-gray-600">Completed</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-red-600">
+              {ownerBookings.filter(b => b.status === 'cancelled').length}
+            </div>
+            <div className="text-sm text-gray-600">Cancelled</div>
+          </div>
+        </div>
+
+        {/* Bookings Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Venue</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Court</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date & Time</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredBookings.map(booking => (
+                <tr key={booking.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    User #{booking.userId}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.venueName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{booking.courtName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {booking.date} at {booking.time}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {booking.duration} hour{booking.duration > 1 ? 's' : ''}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    ${booking.totalPrice}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={getStatusBadge(booking.status)}>
+                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredBookings.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">📅</div>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">No bookings found</h3>
+              <p className="text-gray-600">No bookings match your current filters</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Admin Dashboard Component
+const AdminDashboard = ({ venues, users, bookings }) => {
+  const kpis = {
+    totalUsers: users.filter(u => u.role === 'user').length,
+    totalFacilityOwners: users.filter(u => u.role === 'facility_owner').length,
+    totalBookings: bookings.length,
+    totalActiveCourts: venues.reduce((total, venue) => total + venue.courts.length, 0)
+  };
+
+  const bookingTrends = [
+    { month: 'Jan', bookings: 45 },
+    { month: 'Feb', bookings: 52 },
+    { month: 'Mar', bookings: 48 },
+    { month: 'Apr', bookings: 61 },
+    { month: 'May', bookings: 58 },
+    { month: 'Jun', bookings: 67 }
+  ];
+
+  const userRegistrations = [
+    { month: 'Jan', users: 12 },
+    { month: 'Feb', users: 18 },
+    { month: 'Mar', users: 15 },
+    { month: 'Apr', users: 22 },
+    { month: 'May', users: 19 },
+    { month: 'Jun', users: 25 }
+  ];
+
+  const facilityApprovals = [
+    { month: 'Jan', approved: 3, rejected: 1 },
+    { month: 'Feb', approved: 5, rejected: 2 },
+    { month: 'Mar', approved: 4, rejected: 1 },
+    { month: 'Apr', approved: 6, rejected: 0 },
+    { month: 'May', approved: 5, rejected: 3 },
+    { month: 'Jun', approved: 8, rejected: 1 }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600">Platform overview and management controls</p>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.totalUsers}</p>
+              </div>
+              <div className="text-3xl">👥</div>
+            </div>
+            <div className="mt-2 text-sm text-green-600">+15% from last month</div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Facility Owners</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.totalFacilityOwners}</p>
+              </div>
+              <div className="text-3xl">🏢</div>
+            </div>
+            <div className="mt-2 text-sm text-blue-600">+8% from last month</div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Total Bookings</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.totalBookings}</p>
+              </div>
+              <div className="text-3xl">📅</div>
+            </div>
+            <div className="mt-2 text-sm text-green-600">+22% from last month</div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Active Courts</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.totalActiveCourts}</p>
+              </div>
+              <div className="text-3xl">🏟️</div>
+            </div>
+            <div className="mt-2 text-sm text-blue-600">+5% from last month</div>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Booking Activity */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Booking Activity</h2>
+            <div className="space-y-3">
+              {bookingTrends.map(data => (
+                <div key={data.month} className="flex items-center">
+                  <div className="w-12 text-sm text-gray-600">{data.month}</div>
+                  <div className="flex-1 bg-gray-200 rounded-full h-4 mx-3">
+                    <div 
+                      className="bg-blue-600 h-4 rounded-full" 
+                      style={{width: `${(data.bookings / 70) * 100}%`}}
+                    ></div>
+                  </div>
+                  <div className="w-8 text-sm font-medium text-gray-900">{data.bookings}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* User Registrations */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">User Registrations</h2>
+            <div className="space-y-3">
+              {userRegistrations.map(data => (
+                <div key={data.month} className="flex items-center">
+                  <div className="w-12 text-sm text-gray-600">{data.month}</div>
+                  <div className="flex-1 bg-gray-200 rounded-full h-4 mx-3">
+                    <div 
+                      className="bg-green-600 h-4 rounded-full" 
+                      style={{width: `${(data.users / 30) * 100}%`}}
+                    ></div>
+                  </div>
+                  <div className="w-8 text-sm font-medium text-gray-900">{data.users}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Facility Approvals */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Facility Approvals</h2>
+            <div className="space-y-3">
+              {facilityApprovals.map(data => (
+                <div key={data.month} className="space-y-1">
+                  <div className="flex items-center">
+                    <div className="w-12 text-sm text-gray-600">{data.month}</div>
+                    <div className="flex-1 bg-gray-200 rounded-full h-3 mx-3">
+                      <div 
+                        className="bg-green-600 h-3 rounded-full" 
+                        style={{width: `${(data.approved / 10) * 100}%`}}
+                      ></div>
+                    </div>
+                    <div className="w-8 text-xs text-green-600">{data.approved}✓</div>
+                  </div>
+                  <div className="flex items-center">
+                    <div className="w-12"></div>
+                    <div className="flex-1 bg-gray-200 rounded-full h-2 mx-3">
+                      <div 
+                        className="bg-red-600 h-2 rounded-full" 
+                        style={{width: `${(data.rejected / 10) * 100}%`}}
+                      ></div>
+                    </div>
+                    <div className="w-8 text-xs text-red-600">{data.rejected}✗</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Pending Facilities */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Facility Approvals</h2>
+            <div className="space-y-3">
+              {venues.filter(v => v.status === 'pending').slice(0, 5).map(venue => (
+                <div key={venue.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">{venue.name}</h4>
+                    <p className="text-sm text-gray-600">{venue.address}</p>
+                  </div>
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                    Pending
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent Bookings */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Bookings</h2>
+            <div className="space-y-3">
+              {bookings.slice(0, 5).map(booking => (
+                <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">{booking.venueName}</h4>
+                    <p className="text-sm text-gray-600">{booking.date} at {booking.time}</p>
+                  </div>
+                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
+                    ${booking.totalPrice}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Facility Approval Page Component
+const FacilityApprovalPage = ({ venues, setVenues }) => {
+  const [selectedFacility, setSelectedFacility] = useState(null);
+  const [comments, setComments] = useState('');
+
+  const pendingFacilities = venues.filter(v => v.status === 'pending');
+
+  const handleApprove = (facilityId) => {
+    if (window.confirm('Approve this facility?')) {
+      setVenues(venues.map(v => 
+        v.id === facilityId ? { ...v, status: 'approved' } : v
+      ));
+      setSelectedFacility(null);
+      alert('Facility approved successfully!');
+    }
+  };
+
+  const handleReject = (facilityId) => {
+    if (!comments.trim()) {
+      alert('Please provide a reason for rejection');
+      return;
+    }
+    
+    if (window.confirm('Reject this facility? The owner will be notified.')) {
+      setVenues(venues.map(v => 
+        v.id === facilityId ? { ...v, status: 'rejected', rejectionReason: comments } : v
+      ));
+      setSelectedFacility(null);
+      setComments('');
+      alert('Facility rejected. Owner will be notified.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Facility Approval</h1>
+
+        {/* Pending Facilities List */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {pendingFacilities.map(facility => (
+            <div key={facility.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <img 
+                src={facility.images[0] || 'https://via.placeholder.com/300x200'} 
+                alt={facility.name}
+                className="w-full h-48 object-cover"
+              />
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-semibold">{facility.name}</h3>
+                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                    Pending
+                  </span>
+                </div>
+                <p className="text-gray-600 text-sm mb-2">{facility.address}</p>
+                <p className="text-gray-700 text-sm mb-3 line-clamp-2">{facility.description}</p>
+                
+                <div className="mb-4">
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {facility.sportTypes.map(sport => (
+                      <span key={sport} className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                        {sport}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {facility.amenities.join(', ')}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setSelectedFacility(facility)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Review Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {pendingFacilities.length === 0 && (
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <div className="text-gray-400 text-6xl mb-4">✅</div>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">All caught up!</h3>
+            <p className="text-gray-600">No facilities pending approval</p>
+          </div>
+        )}
+
+        {/* Detail Modal */}
+        {selectedFacility && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-4xl w-full max-h-screen overflow-y-auto">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Review Facility</h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Images */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Photos</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {selectedFacility.images.map((image, index) => (
+                      <img key={index} src={image} alt={`${selectedFacility.name} ${index + 1}`} 
+                           className="w-full h-32 object-cover rounded" />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Details */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Facility Details</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Name</label>
+                      <p className="text-gray-900">{selectedFacility.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Address</label>
+                      <p className="text-gray-900">{selectedFacility.address}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Description</label>
+                      <p className="text-gray-900">{selectedFacility.description}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Sports</label>
+                      <p className="text-gray-900">{selectedFacility.sportTypes.join(', ')}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Amenities</label>
+                      <p className="text-gray-900">{selectedFacility.amenities.join(', ')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Comments */}
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Comments (required for rejection)
+                </label>
+                <textarea
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md h-24"
+                  placeholder="Add comments about the facility..."
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-2 mt-6">
+                <button
+                  onClick={() => {
+                    setSelectedFacility(null);
+                    setComments('');
+                  }}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleReject(selectedFacility.id)}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Reject
+                </button>
+                <button
+                  onClick={() => handleApprove(selectedFacility.id)}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Approve
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// User Management Page Component
+const UserManagementPage = ({ users, setUsers }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = !roleFilter || user.role === roleFilter;
+    const matchesStatus = !statusFilter || user.status === statusFilter;
+    
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  const handleBanUser = (userId) => {
+    if (window.confirm('Ban this user? They will not be able to access the platform.')) {
+      setUsers(users.map(u => u.id === userId ? { ...u, status: 'banned' } : u));
+      alert('User has been banned');
+    }
+  };
+
+  const handleUnbanUser = (userId) => {
+    if (window.confirm('Unban this user? They will regain access to the platform.')) {
+      setUsers(users.map(u => u.id === userId ? { ...u, status: 'active' } : u));
+      alert('User has been unbanned');
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      active: 'bg-green-100 text-green-800',
+      banned: 'bg-red-100 text-red-800',
+      inactive: 'bg-gray-100 text-gray-800'
+    };
+    return `px-3 py-1 rounded-full text-sm font-medium ${styles[status]}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">User Management</h1>
+
+        {/* Filters */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search Users</label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name or email"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Role</label>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="">All Roles</option>
+                <option value="user">End Users</option>
+                <option value="facility_owner">Facility Owners</option>
+                <option value="admin">Administrators</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="banned">Banned</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setRoleFilter('');
+                  setStatusFilter('');
+                }}
+                className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded transition duration-300"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Users Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600">
+              {users.filter(u => u.role === 'user').length}
+            </div>
+            <div className="text-sm text-gray-600">End Users</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-purple-600">
+              {users.filter(u => u.role === 'facility_owner').length}
+            </div>
+            <div className="text-sm text-gray-600">Facility Owners</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-red-600">
+              {users.filter(u => u.status === 'banned').length}
+            </div>
+            <div className="text-sm text-gray-600">Banned Users</div>
+          </div>
+        </div>
+
+        {/* Users Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredUsers.map(user => (
+                <tr key={user.id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                          <span className="text-sm font-medium text-gray-700">
+                            {user.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                    {user.role.replace('_', ' ')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={getStatusBadge(user.status)}>
+                      {user.status.charAt(0).toUpperCase() + user.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {user.status === 'active' ? (
+                      <button
+                        onClick={() => handleBanUser(user.id)}
+                        className="text-red-600 hover:text-red-900 mr-4"
+                      >
+                        Ban User
+                      </button>
+                    ) : user.status === 'banned' ? (
+                      <button
+                        onClick={() => handleUnbanUser(user.id)}
+                        className="text-green-600 hover:text-green-900 mr-4"
+                      >
+                        Unban User
+                      </button>
+                    ) : null}
+                    <button className="text-blue-600 hover:text-blue-900">
+                      View History
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-6xl mb-4">👥</div>
+              <h3 className="text-xl font-medium text-gray-900 mb-2">No users found</h3>
+              <p className="text-gray-600">No users match your current filters</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Reports & Moderation Page Component
+const ReportsModerationPage = () => {
+  const [reports] = useState([
+    {
+      id: 1,
+      reportType: 'Facility Issue',
+      reportedItem: 'Elite Tennis Club',
+      reportedBy: 'John Smith',
+      reason: 'Court was dirty and not properly maintained',
+      date: '2025-01-15',
+      status: 'pending'
+    },
+    {
+      id: 2,
+      reportType: 'User Behavior',
+      reportedItem: 'User #45',
+      reportedBy: 'Sarah Johnson',
+      reason: 'Inappropriate behavior during booking',
+      date: '2025-01-14',
+      status: 'resolved'
+    },
+    {
+      id: 3,
+      reportType: 'Facility Issue',
+      reportedItem: 'City Basketball Center',
+      reportedBy: 'Mike Davis',
+      reason: 'Equipment was broken and dangerous',
+      date: '2025-01-13',
+      status: 'investigating'
+    }
+  ]);
+
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [actionNotes, setActionNotes] = useState('');
+
+  const handleTakeAction = (reportId, action) => {
+    if (window.confirm(`${action} this report?`)) {
+      alert(`Report ${action.toLowerCase()}ed. Appropriate actions have been taken.`);
+      setSelectedReport(null);
+      setActionNotes('');
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      investigating: 'bg-blue-100 text-blue-800',
+      resolved: 'bg-green-100 text-green-800',
+      dismissed: 'bg-gray-100 text-gray-800'
+    };
+    return `px-3 py-1 rounded-full text-sm font-medium ${styles[status]}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Reports & Moderation</h1>
+
+        {/* Reports Summary */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-yellow-600">
+              {reports.filter(r => r.status === 'pending').length}
+            </div>
+            <div className="text-sm text-gray-600">Pending Reports</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-blue-600">
+              {reports.filter(r => r.status === 'investigating').length}
+            </div>
+            <div className="text-sm text-gray-600">Under Investigation</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-green-600">
+              {reports.filter(r => r.status === 'resolved').length}
+            </div>
+            <div className="text-sm text-gray-600">Resolved</div>
+          </div>
+          <div className="bg-white rounded-lg shadow p-6 text-center">
+            <div className="text-3xl font-bold text-gray-600">{reports.length}</div>
+            <div className="text-sm text-gray-600">Total Reports</div>
+          </div>
+        </div>
+
+        {/* Reports Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported Item</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reported By</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {reports.map(report => (
+                <tr key={report.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {report.reportType}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.reportedItem}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.reportedBy}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {report.date}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={getStatusBadge(report.status)}>
+                      {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <button
+                      onClick={() => setSelectedReport(report)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Review
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Report Detail Modal */}
+        {selectedReport && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-8 max-w-2xl w-full">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Review Report</h2>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Report Type</label>
+                  <p className="text-gray-900">{selectedReport.reportType}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reported Item</label>
+                  <p className="text-gray-900">{selectedReport.reportedItem}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reported By</label>
+                  <p className="text-gray-900">{selectedReport.reportedBy}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reason</label>
+                  <p className="text-gray-900">{selectedReport.reason}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Date</label>
+                  <p className="text-gray-900">{selectedReport.date}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Current Status</label>
+                  <span className={getStatusBadge(selectedReport.status)}>
+                    {selectedReport.status.charAt(0).toUpperCase() + selectedReport.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Action Notes</label>
+                <textarea
+                  value={actionNotes}
+                  onChange={(e) => setActionNotes(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md h-24"
+                  placeholder="Add notes about the action taken..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    setSelectedReport(null);
+                    setActionNotes('');
+                  }}
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleTakeAction(selectedReport.id, 'Dismiss')}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={() => handleTakeAction(selectedReport.id, 'Take Action')}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Take Action
+                </button>
+                <button
+                  onClick={() => handleTakeAction(selectedReport.id, 'Resolve')}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                >
+                  Mark Resolved
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Main App Component
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
