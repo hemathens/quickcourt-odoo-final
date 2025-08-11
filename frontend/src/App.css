@@ -1,3 +1,29 @@
+/* Enhance native date input calendar icon size and hover */
+.date-input::-webkit-calendar-picker-indicator {
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+  filter: grayscale(30%);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.date-input::-webkit-calendar-picker-indicator:hover {
+  transform: scale(1.08);
+  filter: none;
+}
+
+/* Firefox */
+@-moz-document url-prefix() {
+  .date-input {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%236b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 1.25rem 1.25rem;
+  }
+  .date-input:hover {
+    filter: none;
+  }
+}
 /* Import Professional Fonts - Modern reservation platform aesthetic */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 

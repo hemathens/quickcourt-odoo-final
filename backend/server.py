@@ -40,11 +40,17 @@ class StatusCheckCreate(BaseModel):
     client_name: str
 
 
+class OperatingHours(BaseModel):
+    start: str = "08:00"
+    end: str = "22:00"
+
+
 class Court(BaseModel):
     id: int
     name: str
     sportType: str
     pricePerHour: float
+    operatingHours: OperatingHours = OperatingHours()
 
 
 class Review(BaseModel):
@@ -67,6 +73,7 @@ class Venue(BaseModel):
     courts: List[Court] = []
     reviews: List[Review] = []
     status: str = "approved"  # approved | pending
+    timezone: str = "UTC"
 
 
 class VenueCreate(BaseModel):
@@ -107,6 +114,8 @@ class Booking(BaseModel):
     duration: int
     totalPrice: float
     status: str = "confirmed"
+    bookingDateTimeUtc: Optional[str] = None
+    timezone: Optional[str] = None
 
 
 class BookingCreate(BaseModel):
@@ -274,6 +283,33 @@ def _overlaps(b1_start: time_cls, b1_dur_h: int, b2_start: time_cls, b2_dur_h: i
     return start1 < end2 and start2 < end1
 
 
+def _within_operating_hours(court: Court, start_time: time_cls, duration_h: int) -> bool:
+    start_minutes = start_time.hour * 60 + start_time.minute
+    end_minutes = start_minutes + duration_h * 60
+    op_start_h, op_start_m = [int(x) for x in court.operatingHours.start.split(":")]
+    op_end_h, op_end_m = [int(x) for x in court.operatingHours.end.split(":")]
+    op_start = op_start_h * 60 + op_start_m
+    op_end = op_end_h * 60 + op_end_m
+    return start_minutes >= op_start and end_minutes <= op_end
+
+
+def _to_utc_iso(venue_tz: str, local_date: str, local_time: str) -> str:
+    if ZoneInfo is None:
+        # Fallback: treat as UTC
+        year, month, day = [int(x) for x in local_date.split("-")]
+        hour, minute = [int(x) for x in local_time.split(":")]
+        local_dt = datetime(year, month, day, hour, minute, tzinfo=tzinfo.utc)
+        return local_dt.astimezone(tzinfo.utc).isoformat()
+    try:
+        tz = ZoneInfo(venue_tz)
+    except Exception:
+        tz = tzinfo.utc
+    year, month, day = [int(x) for x in local_date.split("-")]
+    hour, minute = [int(x) for x in local_time.split(":")]
+    local_dt = datetime(year, month, day, hour, minute, tzinfo=tz)
+    return local_dt.astimezone(tzinfo.utc).isoformat()
+
+
 # ---------------------------
 # Routes
 # ---------------------------
@@ -435,7 +471,7 @@ async def create_booking(payload: BookingCreate) -> Booking:
     if not venue:
         raise HTTPException(status_code=404, detail="Venue not found")
 
-    # Simple conflict check within same venue/court/date
+    # Simple conflict check within same venue/court/date plus operating hours
     new_start = _parse_time_str(payload.time)
     for b in store.bookings.values():
         if b.venueId == payload.venueId and b.courtId == payload.courtId and b.date == payload.date:
@@ -446,6 +482,8 @@ async def create_booking(payload: BookingCreate) -> Booking:
     court = next((c for c in venue.courts if c.id == payload.courtId), None)
     if not court:
         raise HTTPException(status_code=404, detail="Court not found")
+    if not _within_operating_hours(court, new_start, payload.duration):
+        raise HTTPException(status_code=400, detail="Outside operating hours")
     new_id = store.next_booking_id()
     booking = Booking(
         id=new_id,
@@ -460,9 +498,32 @@ async def create_booking(payload: BookingCreate) -> Booking:
         duration=max(1, payload.duration),
         totalPrice=total_price,
         status="confirmed",
+        bookingDateTimeUtc=_to_utc_iso(venue.timezone, payload.date, payload.time),
+        timezone=venue.timezone,
     )
     store.bookings[new_id] = booking
     return booking
+
+
+# Availability endpoint for authoritative checks
+@api_router.get("/availability")
+async def availability(venueId: int, courtId: int, date: str) -> Dict[str, object]:  # noqa: N803
+    venue = store.venues.get(venueId)
+    if not venue:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    court = next((c for c in venue.courts if c.id == courtId), None)
+    if not court:
+        raise HTTPException(status_code=404, detail="Court not found")
+    day_bookings = [
+        {"time": b.time, "duration": b.duration}
+        for b in store.bookings.values()
+        if b.venueId == venueId and b.courtId == courtId and b.date == date
+    ]
+    return {
+        "timezone": venue.timezone,
+        "operatingHours": court.operatingHours.model_dump(),
+        "bookings": day_bookings,
+    }
 
 
 @api_router.post("/bookings/{booking_id}/cancel", response_model=Booking)

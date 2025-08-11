@@ -1,4 +1,6 @@
-import React, { useState, createContext, useContext, useEffect } from 'react';
+import React, { useState, createContext, useContext, useEffect, useRef } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import './App.css';
 
 // Create contexts for state management
@@ -207,11 +209,11 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
 };
 
 // Home Page Component
-const HomePage = ({ setCurrentPage, setSelectedVenue }) => {
+const HomePage = ({ setCurrentPage, setSelectedVenue, venues }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   
-  const popularVenues = mockVenues.filter(v => v.status === 'approved').slice(0, 6);
+  const popularVenues = (venues || []).filter(v => v.status === 'approved').slice(0, 6);
   const popularSports = [
     { name: "Tennis", venues: 15, icon: "🎾" },
     { name: "Basketball", venues: 12, icon: "🏀" },
@@ -885,6 +887,7 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
   const [selectedTime, setSelectedTime] = useState('');
   const [duration, setDuration] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [dayAvailability, setDayAvailability] = useState({ timezone: 'UTC', operatingHours: { start: '08:00', end: '22:00' }, bookings: [] });
 
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
@@ -896,6 +899,67 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
       setTotalPrice(court.pricePerHour * duration);
     }
   }, [court, duration]);
+
+  // Fetch authoritative availability from backend when date changes
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      if (!venue || !court || !selectedDate) return;
+      try {
+        const res = await axios.get(`http://127.0.0.1:8000/api/availability`, {
+          params: { venueId: venue.id, courtId: court.id, date: selectedDate },
+        });
+        if (res?.data) setDayAvailability(res.data);
+      } catch {
+        // fallback stays on local logic if backend not available
+      }
+    };
+    fetchAvailability();
+  }, [venue, court, selectedDate]);
+
+  // Helpers to validate availability prior to booking
+  const toMinutes = (t) => {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  };
+
+  const rangesOverlap = (startA, durA, startB, durB) => {
+    const a1 = toMinutes(startA);
+    const a2 = a1 + durA * 60;
+    const b1 = toMinutes(startB);
+    const b2 = b1 + durB * 60;
+    return a1 < b2 && b1 < a2;
+  };
+
+  const sameCourtSameDate = (b) => b.venueId === venue.id && b.courtId === court.id && b.date === selectedDate;
+
+  const isSlotOccupied = (time) => {
+    if (!selectedDate) return false;
+    // Prefer backend authoritative availability if present
+    const serverBookings = Array.isArray(dayAvailability.bookings) ? dayAvailability.bookings : [];
+    const conflictsServer = serverBookings.some((b) => rangesOverlap(time, duration, b.time, b.duration));
+    if (conflictsServer) return true;
+    // Fallback to local state
+    return bookings.some((b) => sameCourtSameDate(b) && rangesOverlap(time, duration, b.time, b.duration));
+  };
+
+  // Respect operating hours and disable past times for today
+  const isTimeDisabled = (time) => {
+    // operating hours
+    const start = (court?.operatingHours?.start) || dayAvailability?.operatingHours?.start || '08:00';
+    const end = (court?.operatingHours?.end) || dayAvailability?.operatingHours?.end || '22:00';
+    const minutes = toMinutes(time);
+    const withinHours = minutes >= toMinutes(start) && (minutes + duration * 60) <= toMinutes(end);
+    if (!withinHours) return true;
+
+    // past time for today
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (selectedDate === todayStr) {
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      if (minutes <= nowMinutes) return true;
+    }
+    return false;
+  };
 
   const handleBooking = () => {
     if (!selectedDate || !selectedTime) {
@@ -975,27 +1039,39 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="date-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Select Time</label>
                   <div className="grid grid-cols-4 gap-2">
-                    {timeSlots.map(time => (
-                      <button
-                        key={time}
-                        onClick={() => setSelectedTime(time)}
-                        className={`px-3 py-2 rounded-md text-sm font-medium transition duration-300 ${
-                          selectedTime === time
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
+                    {timeSlots.map((time) => {
+                      const occupied = isSlotOccupied(time);
+                      const disabledByTime = isTimeDisabled(time);
+                      const isSelected = selectedTime === time;
+                      const base = 'px-3 py-2 rounded-md text-sm font-medium transition duration-300';
+                      const cls = occupied || disabledByTime
+                        ? 'bg-red-100 text-red-700 line-through cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+                      return (
+                        <button
+                          key={time}
+                          onClick={() => !occupied && !disabledByTime && setSelectedTime(time)}
+                          disabled={occupied || disabledByTime}
+                          title={occupied ? 'This time is occupied' : disabledByTime ? 'Unavailable' : 'Available'}
+                          className={`${base} ${cls}`}
+                        >
+                          {time}
+                        </button>
+                      );
+                    })}
                   </div>
+                  {selectedDate && selectedTime && isSlotOccupied(selectedTime) && (
+                    <p className="text-sm text-red-600 mt-2">Selected time is occupied. Please choose another slot.</p>
+                  )}
                 </div>
 
                 <div>
@@ -1056,9 +1132,9 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
                   </div>
                 </div>
 
-                <button 
+                 <button 
                   onClick={handleBooking}
-                  disabled={!selectedDate || !selectedTime}
+                  disabled={!selectedDate || !selectedTime || isSlotOccupied(selectedTime) || isTimeDisabled(selectedTime)}
                   className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-300"
                 >
                   Proceed to Payment
@@ -1222,8 +1298,19 @@ const ProfilePage = ({ currentUser, setCurrentUser }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: currentUser?.name || '',
-    email: currentUser?.email || ''
+    email: currentUser?.email || '',
+    avatar: currentUser?.avatar || ''
   });
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setFormData((prev) => ({ ...prev, avatar: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = () => {
     setCurrentUser({ ...currentUser, ...formData });
@@ -1251,6 +1338,36 @@ const ProfilePage = ({ currentUser, setCurrentUser }) => {
               </div>
 
               <div className="space-y-4">
+                <div className="flex items-center space-x-4">
+                  {formData.avatar ? (
+                    <img src={formData.avatar} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-lg font-semibold text-gray-600">
+                        {currentUser?.name?.charAt(0)?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  {isEditing && (
+                    <div className="flex items-center space-x-3">
+                      <label className="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded cursor-pointer">
+                        Change Photo
+                        <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                      </label>
+                      {formData.avatar && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData((prev) => ({ ...prev, avatar: '' }))}
+                          className="inline-block bg-red-50 hover:bg-red-100 text-red-700 font-medium py-2 px-3 rounded"
+                          title="Remove current photo"
+                        >
+                          Remove Photo
+                        </button>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">PNG or JPG, up to ~2MB</p>
+                    </div>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                   {isEditing ? (
@@ -3410,11 +3527,23 @@ const ReportsModerationPage = () => {
 // Main App Component
 const App = () => {
   const [currentPage, setCurrentPage] = useState('home');
-  const [currentUser, setCurrentUser] = useState(mockUsers[0]); // Default to first user
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem('qc_user');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return mockUsers[0];
+  }); // Default to first user
   const [selectedVenue, setSelectedVenue] = useState(null);
   const [selectedCourt, setSelectedCourt] = useState(null);
   const [bookings, setBookings] = useState(mockBookings);
-  const [venues, setVenues] = useState(mockVenues);
+  const [venues, setVenues] = useState(() => {
+    try {
+      const raw = localStorage.getItem('qc_venues');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return mockVenues;
+  });
   const [users, setUsers] = useState(mockUsers);
 
   // Listen for navigation events
@@ -3426,10 +3555,45 @@ const App = () => {
     return () => window.removeEventListener('navigate', handleNavigate);
   }, []);
 
+  // Persist venues to localStorage so facilities survive refresh
+  useEffect(() => {
+    try {
+      localStorage.setItem('qc_venues', JSON.stringify(venues));
+    } catch {}
+  }, [venues]);
+
+  // Persist user (including avatar)
+  useEffect(() => {
+    try {
+      localStorage.setItem('qc_user', JSON.stringify(currentUser));
+    } catch {}
+  }, [currentUser]);
+
+  // Backend wiring: fetch venues/bookings on first load (keep UI same)
+  useEffect(() => {
+    (async () => {
+      try {
+        const [vres, bres] = await Promise.all([
+          axios.get('http://127.0.0.1:8000/api/venues'),
+          axios.get('http://127.0.0.1:8000/api/bookings?userId=1'),
+        ]);
+        if (Array.isArray(vres.data) && vres.data.length) {
+          setVenues(vres.data);
+        }
+        if (Array.isArray(bres.data)) {
+          // Fallback to mock if backend empty
+          setBookings(bres.data.length ? bres.data : mockBookings);
+        }
+      } catch {
+        // stay on mocks if backend not running
+      }
+    })();
+  }, []);
+
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} />;
+        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} venues={venues} />;
       case 'signin':
         return <SignInPage setCurrentPage={setCurrentPage} setCurrentUser={setCurrentUser} />;
       case 'learn-more':
@@ -3463,7 +3627,7 @@ const App = () => {
       case 'reports-moderation':
         return <ReportsModerationPage />;
       default:
-        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} />;
+        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} venues={venues} />;
     }
   };
 
