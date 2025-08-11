@@ -191,58 +191,178 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
 
 // Home Page Component
 const HomePage = ({ setCurrentPage, setSelectedVenue }) => {
-  const popularVenues = mockVenues.filter(v => v.status === 'approved').slice(0, 3);
-  const popularSports = ["Tennis", "Basketball", "Badminton", "Football"];
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
+  
+  const popularVenues = mockVenues.filter(v => v.status === 'approved').slice(0, 6);
+  const popularSports = [
+    { name: "Tennis", venues: 15, icon: "🎾" },
+    { name: "Basketball", venues: 12, icon: "🏀" },
+    { name: "Badminton", venues: 8, icon: "🏸" },
+    { name: "Football", venues: 6, icon: "⚽" },
+    { name: "Swimming", venues: 4, icon: "🏊" },
+    { name: "Volleyball", venues: 3, icon: "🏐" }
+  ];
+
+  const locations = ["All Locations", "City Center", "Downtown", "Sports District", "North Side", "South Side"];
+  
+  const featuredStats = [
+    { label: "Active Venues", value: "150+" },
+    { label: "Sports Available", value: "25+" },
+    { label: "Happy Members", value: "10K+" },
+    { label: "Cities Covered", value: "15+" }
+  ];
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      setCurrentPage('venues');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="relative bg-gray-900 text-white">
-        <div className="absolute inset-0 bg-black opacity-50"></div>
+      {/* Enhanced Hero Section */}
+      <div className="relative hero-enhanced min-h-[600px] flex items-center">
+        <div className="absolute inset-0 bg-black opacity-60"></div>
         <div 
-          className="relative bg-cover bg-center h-96 flex items-center"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1499510318569-1a3d67dc3976?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwyfHx0ZW5uaXMlMjBjb3VydHxlbnwwfHx8fDE3NTQ5MDAxMTJ8MA&ixlib=rb-4.1.0&q=85')`
+            backgroundImage: `url('https://images.unsplash.com/photo-1578966663421-00f3bfebfa89?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHw0fHx0ZW5uaXMlMjBjb3VydHxlbnwwfHx8fDE3NTQ5MDQ2MjV8MA&ixlib=rb-4.1.0&q=85')`
           }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center">
-              <h1 className="text-4xl md:text-6xl font-bold mb-4">Book Your Perfect Court</h1>
-              <p className="text-xl md:text-2xl mb-8">Find and reserve sports facilities in your area</p>
-              <button 
-                onClick={() => setCurrentPage('venues')}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition duration-300"
-              >
-                Browse Venues
-              </button>
+        ></div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
+          <h1 className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tight">
+            Book Premium Sports Venues
+            <span className="block text-blue-300 text-4xl md:text-5xl mt-2">
+              Instantly & Effortlessly
+            </span>
+          </h1>
+          <p className="text-xl md:text-2xl text-gray-200 mb-8 max-w-3xl mx-auto font-light">
+            Discover and reserve the best sports facilities in your city. From tennis courts to basketball arenas, find your perfect venue in seconds.
+          </p>
+          
+          {/* Enhanced Search Bar */}
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl p-2 shadow-2xl mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+              <div className="md:col-span-5">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search venues, sports, or locations..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="search-enhanced w-full border-0 focus:ring-0"
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  />
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="md:col-span-4">
+                <select
+                  value={selectedLocation}
+                  onChange={(e) => setSelectedLocation(e.target.value)}
+                  className="search-enhanced w-full border-0 focus:ring-0"
+                >
+                  {locations.map(location => (
+                    <option key={location} value={location}>{location}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-3">
+                <button 
+                  onClick={handleSearch}
+                  className="btn-primary-enhanced w-full h-full text-lg font-semibold"
+                >
+                  Search Venues
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+            {featuredStats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-2xl md:text-3xl font-bold text-white">{stat.value}</div>
+                <div className="text-sm text-gray-300 font-medium">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Popular Venues Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Popular Venues</h2>
-          <p className="text-lg text-gray-600">Discover top-rated sports facilities</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="flex justify-between items-center mb-12">
+          <div>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Venues</h2>
+            <p className="text-xl text-gray-600">Top-rated facilities trusted by thousands of athletes</p>
+          </div>
+          <button 
+            onClick={() => setCurrentPage('venues')}
+            className="btn-secondary-enhanced"
+          >
+            View All Venues
+          </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {popularVenues.map(venue => (
-            <div key={venue.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
-              <img 
-                src={venue.images[0]} 
-                alt={venue.name}
-                className="w-full h-48 object-cover"
-              />
+            <div key={venue.id} className="card-enhanced overflow-hidden">
+              <div className="relative h-56">
+                <img 
+                  src={venue.images[0]} 
+                  alt={venue.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-4 right-4">
+                  <span className="bg-white bg-opacity-90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium flex items-center">
+                    <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    {venue.rating}
+                  </span>
+                </div>
+                <div className="absolute bottom-4 left-4">
+                  <div className="flex flex-wrap gap-1">
+                    {venue.sportTypes.slice(0, 2).map(sport => (
+                      <span key={sport} className="bg-blue-600 bg-opacity-90 text-white px-2 py-1 rounded-md text-xs font-medium">
+                        {sport}
+                      </span>
+                    ))}
+                    {venue.sportTypes.length > 2 && (
+                      <span className="bg-gray-600 bg-opacity-90 text-white px-2 py-1 rounded-md text-xs font-medium">
+                        +{venue.sportTypes.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
               <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">{venue.name}</h3>
-                <p className="text-gray-600 mb-2">{venue.sportTypes.join(', ')}</p>
-                <div className="flex justify-between items-center">
-                  <span className="text-2xl font-bold text-blue-600">${venue.startingPrice}/hr</span>
-                  <div className="flex items-center">
-                    <span className="text-yellow-400">★</span>
-                    <span className="ml-1">{venue.rating}</span>
+                <h3 className="text-xl font-bold mb-2">{venue.name}</h3>
+                <p className="text-gray-600 mb-3 flex items-center">
+                  <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  {venue.address}
+                </p>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-2xl font-bold text-blue-600">
+                      From ${venue.startingPrice}/hr
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-1 text-sm text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M10.5 3L12 2l1.5 1M21 3H3l1.5 1M21 3l-1.5 1" />
+                    </svg>
+                    {venue.courts.length} courts
                   </div>
                 </div>
                 <button 
@@ -250,9 +370,9 @@ const HomePage = ({ setCurrentPage, setSelectedVenue }) => {
                     setSelectedVenue(venue);
                     setCurrentPage('venue-detail');
                   }}
-                  className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition duration-300"
+                  className="btn-primary-enhanced w-full"
                 >
-                  View Details
+                  View Details & Book
                 </button>
               </div>
             </div>
@@ -261,24 +381,100 @@ const HomePage = ({ setCurrentPage, setSelectedVenue }) => {
       </div>
 
       {/* Popular Sports Section */}
-      <div className="bg-white py-16">
+      <div className="bg-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Popular Sports</h2>
-            <p className="text-lg text-gray-600">Find courts for your favorite sport</p>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Explore Sports Categories</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Find the perfect facility for your favorite sport. From amateur to professional level.</p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {popularSports.map(sport => (
               <button 
-                key={sport}
+                key={sport.name}
                 onClick={() => setCurrentPage('venues')}
-                className="bg-gray-100 hover:bg-blue-50 border hover:border-blue-200 rounded-lg p-6 text-center transition duration-300"
+                className="card-enhanced p-6 text-center hover:border-blue-200 transition-all duration-200"
               >
-                <div className="text-3xl mb-2">🏅</div>
-                <h3 className="font-semibold">{sport}</h3>
+                <div className="text-4xl mb-3">{sport.icon}</div>
+                <h3 className="font-semibold text-gray-900 mb-1">{sport.name}</h3>
+                <p className="text-sm text-gray-500">{sport.venues} venues</p>
               </button>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">How QuickCourt Works</h2>
+          <p className="text-xl text-gray-600">Simple, fast, and secure venue booking in three easy steps</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          {[
+            {
+              step: "01",
+              title: "Search & Browse",
+              description: "Find venues near you using our advanced search filters. Compare prices, amenities, and availability.",
+              icon: (
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              )
+            },
+            {
+              step: "02", 
+              title: "Book Instantly",
+              description: "Select your preferred time slot and court. Our secure booking system confirms your reservation immediately.",
+              icon: (
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              )
+            },
+            {
+              step: "03",
+              title: "Play & Enjoy",
+              description: "Show up at your venue with your booking confirmation. Enjoy premium facilities and excellent service.",
+              icon: (
+                <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a1.5 1.5 0 000-3H9v3zm3.5-3a1.5 1.5 0 000 3H10V7h2.5z" />
+                </svg>
+              )
+            }
+          ].map((item, index) => (
+            <div key={index} className="text-center">
+              <div className="relative mb-8">
+                <div className="w-20 h-20 mx-auto bg-blue-600 rounded-full flex items-center justify-center text-white">
+                  {item.icon}
+                </div>
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-bold text-blue-600">{item.step}</span>
+                </div>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">{item.title}</h3>
+              <p className="text-gray-600 leading-relaxed">{item.description}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-blue-600 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">Ready to Book Your Next Game?</h2>
+          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">Join thousands of athletes who trust QuickCourt for their venue bookings</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <button 
+              onClick={() => setCurrentPage('venues')}
+              className="bg-white text-blue-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            >
+              Browse Venues
+            </button>
+            <button className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-blue-600 transition-colors duration-200">
+              Learn More
+            </button>
           </div>
         </div>
       </div>
