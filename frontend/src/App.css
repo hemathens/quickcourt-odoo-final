@@ -160,7 +160,7 @@ input:focus, select:focus, textarea:focus {
   background: #ffffff;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.25rem;
   font-size: 1rem;
   font-weight: 400;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
@@ -170,6 +170,22 @@ input:focus, select:focus, textarea:focus {
 .search-enhanced:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* Prevent text overlapping with left search icon */
+.search-enhanced.with-icon {
+  padding-left: 2.5rem; /* space for the icon */
+}
+
+/* Tweak search layout on small screens */
+@media (max-width: 640px) {
+  .search-enhanced {
+    font-size: 0.95rem;
+    padding: 0.75rem 1rem;
+  }
+  .search-enhanced.with-icon {
+    padding-left: 2.25rem;
+  }
 }
 
 /* Status badge enhancements */

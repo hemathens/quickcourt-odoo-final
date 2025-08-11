@@ -187,7 +187,12 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div
+            className="flex items-center space-x-3 cursor-pointer"
+            onClick={() => setCurrentPage('profile')}
+            title="Profile"
+            role="button"
+          >
             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
               <span className="text-sm font-semibold text-gray-600">
                 {currentUser?.name?.charAt(0)?.toUpperCase()}
@@ -264,7 +269,7 @@ const HomePage = ({ setCurrentPage, setSelectedVenue }) => {
                     placeholder="Search venues, sports, or locations..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="search-enhanced w-full border-0 focus:ring-0"
+                    className="search-enhanced with-icon w-full border-0 focus:ring-0"
                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                   />
                   <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -484,7 +489,10 @@ const HomePage = ({ setCurrentPage, setSelectedVenue }) => {
             >
               Browse Venues
             </button>
-            <button className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-blue-600 transition-colors duration-200">
+            <button 
+              onClick={() => setCurrentPage('learn-more')}
+              className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-blue-600 transition-colors duration-200"
+            >
               Learn More
             </button>
           </div>
@@ -1309,9 +1317,129 @@ const ProfilePage = ({ currentUser, setCurrentUser }) => {
                   <div className="font-medium">Browse Venues</div>
                   <div className="text-sm text-gray-600">Find new places to play</div>
                 </button>
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      setCurrentUser(null);
+                      window.dispatchEvent(new CustomEvent('navigate', { detail: 'signin' }));
+                    }}
+                    className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition duration-300"
+                  >
+                    <div className="font-medium">Log out</div>
+                    <div className="text-sm">Sign out and go to Sign In</div>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Learn More Page for End Users
+const LearnMorePage = ({ setCurrentPage }) => {
+  const features = [
+    { title: 'Discover Venues', desc: 'Browse curated, approved facilities with transparent pricing and amenities.' },
+    { title: 'Instant Booking', desc: 'Select a time slot and confirm your court in seconds with real-time validation.' },
+    { title: 'Smart Filters', desc: 'Filter by sport, price, and rating to quickly find the perfect match.' },
+    { title: 'Manage Bookings', desc: 'View, track, and cancel bookings from one place.' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900">About QuickCourt</h1>
+            <p className="text-lg text-gray-600 mt-2">Everything you need to book sports courts effortlessly</p>
+          </div>
+          <button
+            onClick={() => setCurrentPage('home')}
+            className="btn-secondary-enhanced"
+          >
+            ← Back
+          </button>
+        </div>
+
+        {/* Dashboard-matching cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          {features.map((f, i) => (
+            <div key={i} className="card-enhanced p-6">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">{f.title}</h3>
+              <p className="text-gray-600">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 card-enhanced p-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">How it works</h2>
+            <ol className="list-decimal list-inside space-y-3 text-gray-700">
+              <li>Search venues by sport or location and compare options.</li>
+              <li>Pick a court and time slot; pricing is calculated instantly.</li>
+              <li>Confirm and receive your booking details.</li>
+              <li>Manage your bookings anytime from “My Bookings”.</li>
+            </ol>
+          </div>
+          <div className="card-enhanced p-6">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">Why QuickCourt?</h2>
+            <ul className="space-y-2 text-gray-700">
+              <li>Trusted venues and clear availability</li>
+              <li>Fast and secure booking experience</li>
+              <li>Clean design, optimized for mobile</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <button
+            onClick={() => setCurrentPage('venues')}
+            className="btn-primary-enhanced"
+          >
+            Start Exploring Venues
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Sign In Page (lightweight, uses mock users)
+const SignInPage = ({ setCurrentPage, setCurrentUser }) => {
+  const [selectedRole, setSelectedRole] = useState('user');
+  const handleSignIn = () => {
+    const user = mockUsers.find(u => u.role === selectedRole) || mockUsers[0];
+    setCurrentUser(user);
+    if (selectedRole === 'user') setCurrentPage('home');
+    else if (selectedRole === 'facility_owner') setCurrentPage('owner-dashboard');
+    else setCurrentPage('admin-dashboard');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="bg-white rounded-xl shadow p-8 w-full max-w-md">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Sign in to QuickCourt</h1>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Continue as</label>
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="user">End User</option>
+              <option value="facility_owner">Facility Owner</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button
+            onClick={handleSignIn}
+            className="w-full btn-primary-enhanced"
+          >
+            Sign In
+          </button>
         </div>
       </div>
     </div>
@@ -3302,6 +3430,10 @@ const App = () => {
     switch (currentPage) {
       case 'home':
         return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} />;
+      case 'signin':
+        return <SignInPage setCurrentPage={setCurrentPage} setCurrentUser={setCurrentUser} />;
+      case 'learn-more':
+        return <LearnMorePage setCurrentPage={setCurrentPage} />;
       case 'venues':
         return <VenuesPage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} />;
       case 'venue-detail':
