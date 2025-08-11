@@ -1,6 +1,13 @@
 import React, { useState, createContext, useContext, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+
+const API_BASE = process.env.REACT_APP_API_BASE_URL || 'http://127.0.0.1:8000/api';
+
+// Currency helpers: convert USD amounts (stored in data) to INR for display
+const USD_TO_INR = 85;
+const toINR = (usd) => Math.round(Number(usd || 0) * USD_TO_INR);
+const formatINR = (usd) => `₹${toINR(usd).toLocaleString('en-IN')}`;
 import './App.css';
 
 // Create contexts for state management
@@ -209,7 +216,7 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
 };
 
 // Home Page Component
-const HomePage = ({ setCurrentPage, setSelectedVenue, venues }) => {
+const HomePage = ({ setCurrentPage, setSelectedVenue, venues, isLoadingVenues }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   
@@ -331,10 +338,23 @@ const HomePage = ({ setCurrentPage, setSelectedVenue, venues }) => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {isLoadingVenues && popularVenues.length === 0 && (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="card-enhanced overflow-hidden animate-pulse">
+                <div className="h-56 bg-gray-200" />
+                <div className="p-6 space-y-3">
+                  <div className="h-6 bg-gray-200 rounded w-2/3" />
+                  <div className="h-4 bg-gray-200 rounded w-1/2" />
+                  <div className="h-6 bg-gray-200 rounded w-1/3" />
+                </div>
+              </div>
+            ))
+          )}
           {popularVenues.map(venue => (
             <div key={venue.id} className="card-enhanced overflow-hidden">
               <div className="relative h-56">
                 <img 
+                  loading="lazy"
                   src={venue.images[0]} 
                   alt={venue.name}
                   className="w-full h-full object-cover"
@@ -374,7 +394,7 @@ const HomePage = ({ setCurrentPage, setSelectedVenue, venues }) => {
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center space-x-4">
                     <span className="text-2xl font-bold text-blue-600">
-                      From ${venue.startingPrice}/hr
+                      From {formatINR(venue.startingPrice)}/hr
                     </span>
                   </div>
                   <div className="flex items-center space-x-1 text-sm text-gray-500">
@@ -487,7 +507,7 @@ const HomePage = ({ setCurrentPage, setSelectedVenue, venues }) => {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <button 
               onClick={() => setCurrentPage('venues')}
-              className="bg-white text-blue-600 font-semibold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+              className="border-2 border-white text-white font-semibold py-3 px-8 rounded-lg hover:bg-white hover:text-blue-600 transition-colors duration-200"
             >
               Browse Venues
             </button>
@@ -505,41 +525,59 @@ const HomePage = ({ setCurrentPage, setSelectedVenue, venues }) => {
 };
 
 // Venues Page Component
-const VenuesPage = ({ setCurrentPage, setSelectedVenue }) => {
+const VenuesPage = ({ setCurrentPage, setSelectedVenue, availableSports }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [selectedSport, setSelectedSport] = useState('');
   const [priceRange, setPriceRange] = useState('');
   const [sortBy, setSortBy] = useState('rating');
   const [currentPageNum, setCurrentPageNum] = useState(1);
   const itemsPerPage = 6;
 
-  const approvedVenues = mockVenues.filter(v => v.status === 'approved');
-  
-  // Filter venues
-  const filteredVenues = approvedVenues.filter(venue => {
-    const matchesSearch = venue.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         venue.address.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSport = !selectedSport || venue.sportTypes.includes(selectedSport);
-    const matchesPrice = !priceRange || 
-      (priceRange === 'low' && venue.startingPrice < 40) ||
-      (priceRange === 'medium' && venue.startingPrice >= 40 && venue.startingPrice < 60) ||
-      (priceRange === 'high' && venue.startingPrice >= 60);
-    
-    return matchesSearch && matchesSport && matchesPrice;
-  });
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 350);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
-  // Sort venues
-  const sortedVenues = [...filteredVenues].sort((a, b) => {
-    if (sortBy === 'rating') return b.rating - a.rating;
-    if (sortBy === 'price') return a.startingPrice - b.startingPrice;
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
-    return 0;
-  });
+  // Server-side fetch
+  const [serverVenues, setServerVenues] = useState([]);
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        setIsLoading(true);
+        setError('');
+        const params = {
+          q: debouncedSearch || undefined,
+          sport: selectedSport || undefined,
+          status: 'approved',
+          sortBy: sortBy === 'price' ? 'price' : sortBy === 'name' ? 'name' : 'rating',
+          order: sortBy === 'price' ? 'asc' : 'desc',
+          page: currentPageNum,
+          limit: itemsPerPage,
+          minPrice: priceRange === 'low' ? 0 : priceRange === 'medium' ? 40 : priceRange === 'high' ? 60 : undefined,
+          maxPrice: priceRange === 'low' ? 39.99 : priceRange === 'medium' ? 59.99 : undefined,
+        };
+        const res = await axios.get(`${API_BASE}/venues/search`, { params });
+        setServerVenues(res.data?.items || []);
+        setTotal(res.data?.total || 0);
+      } catch {
+        setError('Failed to load venues');
+        setServerVenues([]);
+        setTotal(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetch();
+  }, [debouncedSearch, selectedSport, priceRange, sortBy, currentPageNum]);
 
-  // Pagination
-  const totalPages = Math.ceil(sortedVenues.length / itemsPerPage);
-  const startIndex = (currentPageNum - 1) * itemsPerPage;
-  const paginatedVenues = sortedVenues.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedVenues = serverVenues;
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -566,10 +604,9 @@ const VenuesPage = ({ setCurrentPage, setSelectedVenue }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Sports</option>
-                  <option value="Tennis">Tennis</option>
-                  <option value="Basketball">Basketball</option>
-                  <option value="Badminton">Badminton</option>
-                  <option value="Football">Football</option>
+                  {availableSports.map(sport => (
+                    <option key={sport} value={sport}>{sport}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -579,9 +616,9 @@ const VenuesPage = ({ setCurrentPage, setSelectedVenue }) => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Prices</option>
-                  <option value="low">Under $40</option>
-                  <option value="medium">$40 - $59</option>
-                  <option value="high">$60+</option>
+                  <option value="low">Under {formatINR(40)}</option>
+                  <option value="medium">{formatINR(40)} - {formatINR(59)}</option>
+                  <option value="high">{formatINR(60)}+</option>
                 </select>
               </div>
               <div>
@@ -600,16 +637,31 @@ const VenuesPage = ({ setCurrentPage, setSelectedVenue }) => {
 
           {/* Results Count */}
           <div className="mb-4">
-            <p className="text-gray-600">{filteredVenues.length} venues found</p>
+            {isLoading ? (
+              <p className="text-gray-600">Loading venues...</p>
+            ) : (
+              <p className="text-gray-600">{total} venues found</p>
+            )}
+            {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
           </div>
         </div>
 
         {/* Venues Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {isLoading && (
+            Array.from({ length: itemsPerPage }).map((_, i) => (
+              <div key={`s-${i}`} className="card-enhanced p-4 animate-pulse">
+                <div className="h-48 bg-gray-200 rounded mb-4" />
+                <div className="h-5 bg-gray-200 rounded w-2/3 mb-2" />
+                <div className="h-4 bg-gray-200 rounded w-1/2" />
+              </div>
+            ))
+          )}
           {paginatedVenues.map(venue => (
             <div key={venue.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
               <img 
-                src={venue.images[0]} 
+                loading="lazy"
+                src={venue.images?.[0]} 
                 alt={venue.name}
                 className="w-full h-48 object-cover"
               />
@@ -618,7 +670,7 @@ const VenuesPage = ({ setCurrentPage, setSelectedVenue }) => {
                 <p className="text-gray-600 mb-1">{venue.sportTypes.join(', ')}</p>
                 <p className="text-gray-500 text-sm mb-3">{venue.address}</p>
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-2xl font-bold text-blue-600">${venue.startingPrice}/hr</span>
+                  <span className="text-2xl font-bold text-blue-600">{formatINR(venue.startingPrice)}/hr</span>
                   <div className="flex items-center">
                     <span className="text-yellow-400">★</span>
                     <span className="ml-1">{venue.rating}</span>
@@ -770,7 +822,7 @@ const VenueDetailPage = ({ venue, setCurrentPage, setSelectedCourt }) => {
 
               <div className="text-center">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  From ${venue.startingPrice}/hr
+                  From {formatINR(venue.startingPrice)}/hr
                 </div>
                 <button 
                   onClick={() => handleBookNow(venue.courts[0])}
@@ -791,7 +843,7 @@ const VenueDetailPage = ({ venue, setCurrentPage, setSelectedCourt }) => {
               <div key={court.id} className="border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-2">{court.name}</h3>
                 <p className="text-gray-600 mb-2">{court.sportType}</p>
-                <div className="text-2xl font-bold text-blue-600 mb-4">${court.pricePerHour}/hr</div>
+                <div className="text-2xl font-bold text-blue-600 mb-4">{formatINR(court.pricePerHour)}/hr</div>
                 <button 
                   onClick={() => handleBookNow(court)}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition duration-300"
@@ -888,6 +940,9 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
   const [duration, setDuration] = useState(1);
   const [totalPrice, setTotalPrice] = useState(0);
   const [dayAvailability, setDayAvailability] = useState({ timezone: 'UTC', operatingHours: { start: '08:00', end: '22:00' }, bookings: [] });
+  const [includeAdjacentCourt, setIncludeAdjacentCourt] = useState(false);
+  const [adjacentCourt, setAdjacentCourt] = useState(null);
+  const [adjacentCourtAvailable, setAdjacentCourtAvailable] = useState(false);
 
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
@@ -905,7 +960,7 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
     const fetchAvailability = async () => {
       if (!venue || !court || !selectedDate) return;
       try {
-        const res = await axios.get(`http://127.0.0.1:8000/api/availability`, {
+        const res = await axios.get(`${API_BASE}/availability`, {
           params: { venueId: venue.id, courtId: court.id, date: selectedDate },
         });
         if (res?.data) setDayAvailability(res.data);
@@ -915,6 +970,47 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
     };
     fetchAvailability();
   }, [venue, court, selectedDate]);
+
+  // Check for adjacent court availability when date/time changes
+  useEffect(() => {
+    const checkAdjacentCourt = async () => {
+      if (!venue || !court || !selectedDate || !selectedTime) {
+        setAdjacentCourt(null);
+        setAdjacentCourtAvailable(false);
+        return;
+      }
+      
+      const other = venue.courts.find(c => c.id !== court.id && c.sportType === court.sportType);
+      if (!other) {
+        setAdjacentCourt(null);
+        setAdjacentCourtAvailable(false);
+        return;
+      }
+      
+      setAdjacentCourt(other);
+      
+      // Check availability
+      let occupied = false;
+      try {
+        const res = await axios.get(`${API_BASE}/availability`, {
+          params: { venueId: venue.id, courtId: other.id, date: selectedDate },
+        });
+        const serverBookings = Array.isArray(res?.data?.bookings) ? res.data.bookings : [];
+        const conflictServer = serverBookings.some((b) => rangesOverlap(selectedTime, duration, b.time, b.duration));
+        const conflictLocal = bookings.some((b) => b.venueId === venue.id && b.courtId === other.id && b.date === selectedDate && rangesOverlap(selectedTime, duration, b.time, b.duration));
+        occupied = conflictServer || conflictLocal;
+      } catch {
+        // fallback: local only
+        occupied = bookings.some((b) => b.venueId === venue.id && b.courtId === other.id && b.date === selectedDate && rangesOverlap(selectedTime, duration, b.time, b.duration));
+      }
+      
+      setAdjacentCourtAvailable(!occupied);
+      if (occupied && includeAdjacentCourt) {
+        setIncludeAdjacentCourt(false);
+      }
+    };
+    checkAdjacentCourt();
+  }, [venue, court, selectedDate, selectedTime, duration, bookings, includeAdjacentCourt]);
 
   // Helpers to validate availability prior to booking
   const toMinutes = (t) => {
@@ -961,7 +1057,7 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
     return false;
   };
 
-  const handleBooking = () => {
+  const handleBooking = async () => {
     if (!selectedDate || !selectedTime) {
       alert('Please select date and time');
       return;
@@ -982,8 +1078,27 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
       status: 'confirmed'
     };
 
-    setBookings([...bookings, newBooking]);
-    alert('Booking confirmed! Redirecting to payment...');
+    const additionalBookings = [];
+    // Include adjacent court if selected and available
+    if (includeAdjacentCourt && adjacentCourt && adjacentCourtAvailable) {
+      additionalBookings.push({
+        id: Math.max(...bookings.map(b => b.id), 0) + 2,
+        userId: 1,
+        venueId: venue.id,
+        venueName: venue.name,
+        courtId: adjacentCourt.id,
+        courtName: adjacentCourt.name,
+        sportType: adjacentCourt.sportType,
+        date: selectedDate,
+        time: selectedTime,
+        duration,
+        totalPrice: adjacentCourt.pricePerHour * duration,
+        status: 'confirmed'
+      });
+    }
+
+    setBookings([...bookings, newBooking, ...additionalBookings]);
+    alert(additionalBookings.length ? 'Multiple courts booked! Redirecting to payment...' : 'Booking confirmed! Redirecting to payment...');
     setTimeout(() => {
       setCurrentPage('my-bookings');
     }, 1500);
@@ -1027,7 +1142,7 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h3 className="font-semibold">{venue.name}</h3>
                   <p className="text-gray-600">{court.name} - {court.sportType}</p>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">${court.pricePerHour}/hour</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-2">{formatINR(court.pricePerHour)}/hour</p>
                 </div>
               </div>
 
@@ -1086,6 +1201,39 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
                     ))}
                   </select>
                 </div>
+
+                {/* Adjacent Court Option */}
+                {adjacentCourt && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h4 className="font-medium text-gray-900">Book Adjacent Court</h4>
+                        <p className="text-sm text-gray-600">
+                          {adjacentCourt.name} - {adjacentCourt.sportType}
+                        </p>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="adjacent-court"
+                          checked={includeAdjacentCourt}
+                          onChange={(e) => setIncludeAdjacentCourt(e.target.checked)}
+                          disabled={!adjacentCourtAvailable}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <label htmlFor="adjacent-court" className="ml-2 text-sm font-medium text-gray-900">
+                          Include
+                        </label>
+                      </div>
+                    </div>
+                    {!adjacentCourtAvailable && (
+                      <p className="text-sm text-red-600">Adjacent court not available at selected time</p>
+                    )}
+                    {adjacentCourtAvailable && (
+                      <p className="text-sm text-green-600">+ {formatINR(adjacentCourt.pricePerHour * duration)} for {duration} hour{duration > 1 ? 's' : ''}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1121,14 +1269,26 @@ const CourtBookingPage = ({ court, venue, setCurrentPage, bookings, setBookings 
                   </div>
                   <div className="flex justify-between">
                     <span>Rate:</span>
-                    <span className="font-medium">${court.pricePerHour}/hour</span>
+                    <span className="font-medium">{formatINR(court.pricePerHour)}/hour</span>
                   </div>
                 </div>
+
+                {includeAdjacentCourt && adjacentCourt && adjacentCourtAvailable && (
+                  <div className="space-y-3 mb-6 border-t pt-4">
+                    <h3 className="font-medium text-gray-900">Additional Court</h3>
+                    <div className="flex justify-between">
+                      <span>{adjacentCourt.name}:</span>
+                      <span className="font-medium">{formatINR(adjacentCourt.pricePerHour * duration)}</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="border-t pt-4 mb-6">
                   <div className="flex justify-between text-xl font-bold">
                     <span>Total:</span>
-                    <span className="text-blue-600">${totalPrice}</span>
+                    <span className="text-blue-600">
+                      {formatINR(totalPrice + (includeAdjacentCourt && adjacentCourt && adjacentCourtAvailable ? adjacentCourt.pricePerHour * duration : 0))}
+                    </span>
                   </div>
                 </div>
 
@@ -1254,7 +1414,7 @@ const MyBookingsPage = ({ bookings, setBookings }) => {
                       <div>
                         <p className="text-sm text-gray-500">Duration & Price</p>
                         <p className="font-medium">{booking.duration} hour{booking.duration > 1 ? 's' : ''}</p>
-                        <p className="font-bold text-blue-600">${booking.totalPrice}</p>
+                        <p className="font-bold text-blue-600">{formatINR(booking.totalPrice)}</p>
                       </div>
                       <div className="flex flex-col items-start md:items-end">
                         <span className={getStatusBadge(booking.status)}>
@@ -1655,7 +1815,7 @@ const OwnerDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-purple-600 uppercase tracking-wide">Monthly Revenue</p>
-                <p className="text-3xl font-bold text-gray-900 mt-1">${kpis.monthlyEarnings.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{formatINR(kpis.monthlyEarnings)}</p>
                 <div className="flex items-center mt-2">
                   <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -1714,7 +1874,7 @@ const OwnerDashboard = () => {
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-xs text-gray-500">Revenue</span>
-                      <span className="text-xs font-medium text-green-600">${data.revenue}</span>
+                      <span className="text-xs font-medium text-green-600">{formatINR(data.revenue)}</span>
                     </div>
                   </div>
                 </div>
@@ -1818,7 +1978,7 @@ const OwnerDashboard = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">${booking.amount}</div>
+                    <div className="text-lg font-bold text-green-600">{formatINR(booking.amount)}</div>
                     <div className="text-xs text-gray-500">1 hour</div>
                   </div>
                 </div>
@@ -1832,7 +1992,7 @@ const OwnerDashboard = () => {
 };
 
 // Facility Management Page Component
-const FacilityManagementPage = ({ venues, setVenues }) => {
+const FacilityManagementPage = ({ venues, setVenues, availableSports, setAvailableSports }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingFacility, setEditingFacility] = useState(null);
   const [formData, setFormData] = useState({
@@ -1843,31 +2003,66 @@ const FacilityManagementPage = ({ venues, setVenues }) => {
     amenities: [],
     images: []
   });
+  const [newSportName, setNewSportName] = useState('');
 
   const ownerVenues = venues.filter(v => v.status === 'approved' || v.status === 'pending');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const newVenue = {
-      id: Math.max(...venues.map(v => v.id), 0) + 1,
-      ...formData,
-      startingPrice: 50,
-      rating: 0,
-      courts: [],
-      reviews: [],
-      status: 'pending'
-    };
-
+    
+    // Validate that at least one sport is selected
+    if (!formData.sportTypes || formData.sportTypes.length === 0) {
+      alert('Please select at least one sport type for your facility.');
+      return;
+    }
+    
+    // Validate that at least one image is provided
+    if (!formData.images || formData.images.length === 0) {
+      alert('Please add at least one photo of your facility.');
+      return;
+    }
+    
     if (editingFacility) {
       setVenues(venues.map(v => v.id === editingFacility.id ? { ...v, ...formData } : v));
       setEditingFacility(null);
-    } else {
-      setVenues([...venues, newVenue]);
+      setShowAddForm(false);
+      setFormData({ name: '', address: '', description: '', sportTypes: [], amenities: [], images: [] });
+      alert('Facility updated!');
+      return;
     }
-
-    setShowAddForm(false);
-    setFormData({ name: '', address: '', description: '', sportTypes: [], amenities: [], images: [] });
-    alert(editingFacility ? 'Facility updated!' : 'Facility added for approval!');
+    // Create via API, fall back to local on failure
+    try {
+      const payload = {
+        name: formData.name,
+        sportTypes: formData.sportTypes,
+        startingPrice: 50,
+        rating: 0,
+        address: formData.address,
+        description: formData.description,
+        amenities: formData.amenities,
+        images: formData.images,
+        status: 'pending'
+      };
+      const res = await axios.post(`${API_BASE}/venues`, payload);
+      const created = res?.data || null;
+      if (created) setVenues([...venues, created]);
+      else throw new Error('No data');
+    } catch {
+      const fallback = {
+        id: Math.max(...venues.map(v => v.id), 0) + 1,
+        ...formData,
+        startingPrice: 50,
+        rating: 0,
+        courts: [],
+        reviews: [],
+        status: 'pending'
+      };
+      setVenues([...venues, fallback]);
+    } finally {
+      setShowAddForm(false);
+      setFormData({ name: '', address: '', description: '', sportTypes: [], amenities: [], images: [] });
+      alert('Facility added for approval!');
+    }
   };
 
   const handleEdit = (venue) => {
@@ -1951,8 +2146,8 @@ const FacilityManagementPage = ({ venues, setVenues }) => {
                 </div>
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Sports Available</label>
-                  <div className="flex flex-wrap gap-2">
-                    {['Tennis', 'Basketball', 'Badminton', 'Football', 'Swimming'].map(sport => (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {availableSports.map(sport => (
                       <label key={sport} className="flex items-center">
                         <input
                           type="checkbox"
@@ -1969,6 +2164,38 @@ const FacilityManagementPage = ({ venues, setVenues }) => {
                         {sport}
                       </label>
                     ))}
+                  </div>
+                  
+                  {/* Add New Sport */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Add New Sport</h4>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newSportName}
+                        onChange={(e) => setNewSportName(e.target.value)}
+                        placeholder="Enter sport name (e.g., Cricket, Volleyball)"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const trimmed = newSportName.trim();
+                          if (trimmed && !availableSports.includes(trimmed)) {
+                            setAvailableSports([...availableSports, trimmed]);
+                            setFormData({...formData, sportTypes: [...formData.sportTypes, trimmed]});
+                            setNewSportName('');
+                          } else if (availableSports.includes(trimmed)) {
+                            alert('This sport already exists!');
+                          }
+                        }}
+                        disabled={!newSportName.trim()}
+                        className="btn-primary-enhanced px-4 py-2 disabled:bg-gray-400"
+                      >
+                        Add Sport
+                      </button>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">New sports will be available across the entire website.</p>
                   </div>
                 </div>
                 <div className="mt-4">
@@ -2073,7 +2300,7 @@ const FacilityManagementPage = ({ venues, setVenues }) => {
 };
 
 // Court Management Page Component
-const CourtManagementPage = ({ venues, setVenues }) => {
+const CourtManagementPage = ({ venues, setVenues, availableSports }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedVenue, setSelectedVenue] = useState('');
   const [editingCourt, setEditingCourt] = useState(null);
@@ -2212,14 +2439,13 @@ const CourtManagementPage = ({ venues, setVenues }) => {
                       required
                     >
                       <option value="">Select sport</option>
-                      <option value="Tennis">Tennis</option>
-                      <option value="Basketball">Basketball</option>
-                      <option value="Badminton">Badminton</option>
-                      <option value="Football">Football</option>
+                      {availableSports.map(sport => (
+                        <option key={sport} value={sport}>{sport}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Price Per Hour ($)</label>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">Price Per Hour (₹)</label>
                     <input
                       type="number"
                       value={formData.pricePerHour}
@@ -2300,7 +2526,7 @@ const CourtManagementPage = ({ venues, setVenues }) => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{court.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{court.venueName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{court.sportType}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${court.pricePerHour}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatINR(court.pricePerHour)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {court.operatingHours?.start || '08:00'} - {court.operatingHours?.end || '22:00'}
                   </td>
@@ -2879,7 +3105,7 @@ const AdminDashboard = ({ venues, users, bookings }) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-green-600">${venue.revenue.toLocaleString()}</div>
+                    <div className="text-lg font-bold text-green-600">{formatINR(venue.revenue)}</div>
                     <div className="text-xs text-gray-500">Revenue</div>
                   </div>
                 </div>
@@ -2944,13 +3170,22 @@ const FacilityApprovalPage = ({ venues, setVenues }) => {
 
   const pendingFacilities = venues.filter(v => v.status === 'pending');
 
-  const handleApprove = (facilityId) => {
-    if (window.confirm('Approve this facility?')) {
-      setVenues(venues.map(v => 
-        v.id === facilityId ? { ...v, status: 'approved' } : v
-      ));
+  const handleApprove = async (facilityId) => {
+    if (!window.confirm('Approve this facility?')) return;
+    try {
+      const res = await axios.post(`${API_BASE}/admin/venues/${facilityId}/approve`);
+      const approved = res?.data;
+      if (approved) {
+        setVenues(venues.map(v => v.id === facilityId ? approved : v));
+        setSelectedFacility(null);
+        alert('Facility approved successfully!');
+        return;
+      }
+      throw new Error('No data');
+    } catch {
+      setVenues(venues.map(v => v.id === facilityId ? { ...v, status: 'approved' } : v));
       setSelectedFacility(null);
-      alert('Facility approved successfully!');
+      alert('Facility approved locally (server not reachable).');
     }
   };
 
@@ -3545,6 +3780,15 @@ const App = () => {
     return mockVenues;
   });
   const [users, setUsers] = useState(mockUsers);
+  const [isLoadingVenues, setIsLoadingVenues] = useState(false);
+  const [venuesError, setVenuesError] = useState('');
+  const [availableSports, setAvailableSports] = useState(() => {
+    try {
+      const raw = localStorage.getItem('qc_available_sports');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return ['Tennis', 'Basketball', 'Badminton', 'Football', 'Swimming'];
+  });
 
   // Listen for navigation events
   useEffect(() => {
@@ -3569,23 +3813,34 @@ const App = () => {
     } catch {}
   }, [currentUser]);
 
+  // Persist availableSports to localStorage when changed
+  useEffect(() => {
+    try {
+      localStorage.setItem('qc_available_sports', JSON.stringify(availableSports));
+    } catch {}
+  }, [availableSports]);
+
   // Backend wiring: fetch venues/bookings on first load (keep UI same)
   useEffect(() => {
     (async () => {
       try {
+        setIsLoadingVenues(true);
+        setVenuesError('');
         const [vres, bres] = await Promise.all([
-          axios.get('http://127.0.0.1:8000/api/venues'),
-          axios.get('http://127.0.0.1:8000/api/bookings?userId=1'),
+          axios.get(`${API_BASE}/venues/search`, { params: { status: 'approved', sortBy: 'rating', order: 'desc', page: 1, limit: 50 } }),
+          axios.get(`${API_BASE}/bookings`, { params: { userId: 1 } }),
         ]);
-        if (Array.isArray(vres.data) && vres.data.length) {
-          setVenues(vres.data);
-        }
+        const venueItems = Array.isArray(vres.data?.items) ? vres.data.items : (Array.isArray(vres.data) ? vres.data : []);
+        if (venueItems.length) setVenues(venueItems);
         if (Array.isArray(bres.data)) {
           // Fallback to mock if backend empty
           setBookings(bres.data.length ? bres.data : mockBookings);
         }
       } catch {
         // stay on mocks if backend not running
+        setVenuesError('Failed to load venues from server. Showing local data.');
+      } finally {
+        setIsLoadingVenues(false);
       }
     })();
   }, []);
@@ -3593,13 +3848,13 @@ const App = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} venues={venues} />;
+        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} venues={venues} isLoadingVenues={isLoadingVenues} />;
       case 'signin':
         return <SignInPage setCurrentPage={setCurrentPage} setCurrentUser={setCurrentUser} />;
       case 'learn-more':
         return <LearnMorePage setCurrentPage={setCurrentPage} />;
       case 'venues':
-        return <VenuesPage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} />;
+        return <VenuesPage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} availableSports={availableSports} />;
       case 'venue-detail':
         return <VenueDetailPage venue={selectedVenue} setCurrentPage={setCurrentPage} setSelectedCourt={setSelectedCourt} />;
       case 'court-booking':
@@ -3611,9 +3866,9 @@ const App = () => {
       case 'owner-dashboard':
         return <OwnerDashboard />;
       case 'facility-management':
-        return <FacilityManagementPage venues={venues} setVenues={setVenues} />;
+        return <FacilityManagementPage venues={venues} setVenues={setVenues} availableSports={availableSports} setAvailableSports={setAvailableSports} />;
       case 'court-management':
-        return <CourtManagementPage venues={venues} setVenues={setVenues} />;
+        return <CourtManagementPage venues={venues} setVenues={setVenues} availableSports={availableSports} />;
       case 'time-slot-management':
         return <TimeSlotManagementPage venues={venues} />;
       case 'booking-overview':
@@ -3627,7 +3882,7 @@ const App = () => {
       case 'reports-moderation':
         return <ReportsModerationPage />;
       default:
-        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} venues={venues} />;
+        return <HomePage setCurrentPage={setCurrentPage} setSelectedVenue={setSelectedVenue} venues={venues} isLoadingVenues={isLoadingVenues} />;
     }
   };
 

@@ -4,7 +4,11 @@ from starlette.middleware.cors import CORSMiddleware
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field
 from pathlib import Path
-from datetime import datetime, date, time as time_cls, timedelta
+from datetime import datetime, date, time as time_cls, timedelta, timezone as tzinfo
+try:
+    from zoneinfo import ZoneInfo  # Python 3.9+
+except Exception:  # pragma: no cover
+    ZoneInfo = None  # type: ignore
 import logging
 import os
 import uuid
@@ -177,7 +181,10 @@ class MemoryStore:
             address="123 Sports Ave, City Center",
             description="Premium tennis facility with 6 professional courts, pro shop, and coaching services.",
             amenities=["Parking", "Lockers", "Pro Shop", "Coaching", "Restrooms"],
-            images=[],
+            images=[
+                "https://images.unsplash.com/photo-1448743133657-f67644da3008?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwxfHx0ZW5uaXMlMjBjb3VydHxlbnwwfHx8fDE3NTQ5MDAxMTJ8MA&ixlib=rb-4.1.0&q=85",
+                "https://images.unsplash.com/photo-1499510318569-1a3d67dc3976?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzB8MHwxfHNlYXJjaHwyfHx0ZW5uaXMlMjBjb3VydHxlbnwwfHx8fDE3NTQ5MDAxMTJ8MA&ixlib=rb-4.1.0&q=85",
+            ],
             courts=[],
             reviews=[
                 Review(id=1, user="John Smith", rating=5, comment="Excellent facilities and well-maintained courts!"),
@@ -199,7 +206,10 @@ class MemoryStore:
             address="456 Athletic Blvd, Downtown",
             description="Indoor basketball facility with 4 full courts and modern amenities.",
             amenities=["Parking", "Lockers", "Scoreboard", "Sound System", "AC"],
-            images=[],
+            images=[
+                "https://images.unsplash.com/photo-1751010942953-e48cb4b2ccf5?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHwzfHxzcG9ydHMlMjBjb3VydHN8ZW58MHx8fHwxNzU0OTAwMTA1fDA&ixlib=rb-4.1.0&q=85",
+                "https://images.unsplash.com/photo-1749743823062-df9d9de55e94?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHw0fHxzcG9ydHMlMjBjb3VydHN8ZW58MHx8fHwxNzU0OTAwMTA1fDA&ixlib=rb-4.1.0&q=85",
+            ],
             courts=[],
             reviews=[Review(id=3, user="Mike Davis", rating=5, comment="Perfect for team practice!")],
             status="approved",
@@ -218,7 +228,10 @@ class MemoryStore:
             address="789 Champions Way, Sports District",
             description="Multi-sport facility offering various court types for all skill levels.",
             amenities=["Parking", "Cafe", "Lockers", "Equipment Rental", "Shower"],
-            images=[],
+            images=[
+                "https://images.pexels.com/photos/3067481/pexels-photo-3067481.jpeg",
+                "https://images.pexels.com/photos/7648145/pexels-photo-7648145.jpeg",
+            ],
             courts=[],
             reviews=[],
             status="pending",
@@ -327,10 +340,11 @@ async def create_status_check(input: StatusCheckCreate) -> StatusCheck:  # noqa:
             db = client[os.environ["DB_NAME"]]
             status_obj = StatusCheck(client_name=input.client_name)
             await db.status_checks.insert_one(status_obj.model_dump())
-            client.close()
+            await client.close()
             return status_obj
         except Exception:  # pragma: no cover - optional path
             pass
+        # fallthrough to return below if not successful
 
     return StatusCheck(client_name=input.client_name)
 
@@ -389,6 +403,52 @@ async def list_venues(
     if sport:
         venues = [v for v in venues if sport in v.sportTypes]
     return venues
+
+
+# Search venues with pagination/sorting (for UI lists)
+@api_router.get("/venues/search")
+async def search_venues(
+    q: Optional[str] = None,
+    status: Optional[str] = None,
+    sport: Optional[str] = None,
+    sortBy: Optional[str] = "rating",  # rating | price | name
+    order: Optional[str] = "desc",      # asc | desc
+    page: int = 1,
+    limit: int = 12,
+    minPrice: Optional[float] = None,
+    maxPrice: Optional[float] = None,
+) -> Dict[str, object]:
+    items = list(store.venues.values())
+    # Filters
+    if status:
+        items = [v for v in items if v.status == status]
+    if sport:
+        items = [v for v in items if sport in v.sportTypes]
+    if q:
+        ql = q.lower()
+        items = [v for v in items if ql in v.name.lower() or ql in v.address.lower()]
+    if minPrice is not None:
+        items = [v for v in items if v.startingPrice >= float(minPrice)]
+    if maxPrice is not None:
+        items = [v for v in items if v.startingPrice <= float(maxPrice)]
+
+    # Sorting
+    if sortBy == "rating":
+        items.sort(key=lambda v: v.rating, reverse=(order != "asc"))
+    elif sortBy == "price":
+        items.sort(key=lambda v: v.startingPrice, reverse=(order != "asc"))
+    elif sortBy == "name":
+        items.sort(key=lambda v: v.name.lower(), reverse=(order != "asc"))
+
+    total = len(items)
+    # Pagination
+    if page < 1:
+        page = 1
+    start = (page - 1) * max(1, limit)
+    end = start + max(1, limit)
+    page_items = items[start:end]
+
+    return {"items": page_items, "total": total}
 
 
 @api_router.get("/venues/{venue_id}", response_model=Venue)
