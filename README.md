@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ## QuickCourt Dev Notes
 
 Run backend:
@@ -390,4 +389,3 @@ Contact & Support
 =================
     
 * Demo & questions: ping in Slack/Discord during judging.
->>>>>>> ca7ef5e30efca3c7a13eeda4f5e7af821a15c872
