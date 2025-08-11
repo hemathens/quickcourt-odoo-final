@@ -1333,13 +1333,13 @@ const OwnerDashboard = () => {
   ];
 
   const bookingData = [
-    { day: 'Mon', bookings: 12 },
-    { day: 'Tue', bookings: 8 },
-    { day: 'Wed', bookings: 15 },
-    { day: 'Thu', bookings: 10 },
-    { day: 'Fri', bookings: 18 },
-    { day: 'Sat', bookings: 22 },
-    { day: 'Sun', bookings: 16 }
+    { day: 'Mon', bookings: 12, revenue: 480 },
+    { day: 'Tue', bookings: 8, revenue: 320 },
+    { day: 'Wed', bookings: 15, revenue: 600 },
+    { day: 'Thu', bookings: 10, revenue: 400 },
+    { day: 'Fri', bookings: 18, revenue: 720 },
+    { day: 'Sat', bookings: 22, revenue: 880 },
+    { day: 'Sun', bookings: 16, revenue: 640 }
   ];
 
   const peakHours = [
@@ -1352,92 +1352,141 @@ const OwnerDashboard = () => {
     { hour: '8PM', bookings: 18 }
   ];
 
+  const recentBookings = [
+    { id: 1, user: 'John Smith', court: 'Tennis Court 1', time: '10:00', amount: 50 },
+    { id: 2, user: 'Sarah Johnson', court: 'Basketball Court', time: '14:00', amount: 40 },
+    { id: 3, user: 'Mike Davis', court: 'Tennis Court 2', time: '16:00', amount: 55 },
+    { id: 4, user: 'Emily Brown', court: 'Badminton Court', time: '18:00', amount: 30 }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Facility Owner Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's how your facilities are performing.</p>
+          <h1 className="text-4xl font-bold text-gray-900">Facility Dashboard</h1>
+          <p className="text-lg text-gray-600 mt-2">Welcome back! Here's how your facilities are performing today.</p>
         </div>
 
-        {/* KPI Cards */}
+        {/* Enhanced KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Bookings</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.totalBookings}</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-blue-50 to-blue-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-blue-600 uppercase tracking-wide">Total Bookings</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{kpis.totalBookings}</p>
+                <div className="flex items-center mt-2">
+                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-green-600 font-medium">+12% from last month</span>
+                </div>
               </div>
-              <div className="text-3xl">📅</div>
+              <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-green-600">+12% from last month</div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Active Courts</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.activeCourts}</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-green-50 to-green-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-green-600 uppercase tracking-wide">Active Courts</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{kpis.activeCourts}</p>
+                <div className="mt-2">
+                  <span className="text-sm text-green-600 font-medium">All operational</span>
+                </div>
               </div>
-              <div className="text-3xl">🏟️</div>
+              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M10.5 3L12 2l1.5 1M21 3H3l1.5 1M21 3l-1.5 1" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-blue-600">All operational</div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Monthly Earnings</p>
-                <p className="text-3xl font-bold text-gray-900">${kpis.monthlyEarnings}</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-purple-50 to-purple-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-purple-600 uppercase tracking-wide">Monthly Revenue</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">${kpis.monthlyEarnings.toLocaleString()}</p>
+                <div className="flex items-center mt-2">
+                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-green-600 font-medium">+8% from last month</span>
+                </div>
               </div>
-              <div className="text-3xl">💰</div>
+              <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-green-600">+8% from last month</div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Occupancy Rate</p>
-                <p className="text-3xl font-bold text-gray-900">{kpis.occupancyRate}%</p>
+          <div className="card-enhanced p-6 bg-gradient-to-r from-orange-50 to-orange-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-orange-600 uppercase tracking-wide">Occupancy Rate</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{kpis.occupancyRate}%</p>
+                <div className="flex items-center mt-2">
+                  <svg className="w-4 h-4 text-green-500 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm text-green-600 font-medium">+5% from last week</span>
+                </div>
               </div>
-              <div className="text-3xl">📊</div>
+              <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
             </div>
-            <div className="mt-2 text-sm text-green-600">+5% from last month</div>
           </div>
         </div>
 
-        {/* Charts */}
+        {/* Charts and Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Weekly Bookings */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Weekly Booking Trends</h2>
-            <div className="space-y-3">
+          {/* Weekly Booking Trends */}
+          <div className="chart-enhanced">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Weekly Performance</h2>
+            <div className="space-y-4">
               {bookingData.map(data => (
                 <div key={data.day} className="flex items-center">
-                  <div className="w-12 text-sm text-gray-600">{data.day}</div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-4 mx-3">
-                    <div 
-                      className="bg-blue-600 h-4 rounded-full" 
-                      style={{width: `${(data.bookings / 25) * 100}%`}}
-                    ></div>
+                  <div className="w-12 text-sm font-medium text-gray-600">{data.day}</div>
+                  <div className="flex-1 mx-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-500">Bookings</span>
+                      <span className="text-xs font-medium text-gray-900">{data.bookings}</span>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-500" 
+                        style={{width: `${(data.bookings / 25) * 100}%`}}
+                      ></div>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-xs text-gray-500">Revenue</span>
+                      <span className="text-xs font-medium text-green-600">${data.revenue}</span>
+                    </div>
                   </div>
-                  <div className="w-8 text-sm font-medium text-gray-900">{data.bookings}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Peak Hours */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Peak Booking Hours</h2>
-            <div className="space-y-3">
+          {/* Peak Hours Analysis */}
+          <div className="chart-enhanced">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Peak Booking Hours</h2>
+            <div className="space-y-4">
               {peakHours.map(data => (
                 <div key={data.hour} className="flex items-center">
-                  <div className="w-12 text-sm text-gray-600">{data.hour}</div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-4 mx-3">
+                  <div className="w-12 text-sm font-medium text-gray-600">{data.hour}</div>
+                  <div className="flex-1 bg-gray-200 rounded-full h-3 mx-4">
                     <div 
-                      className="bg-green-600 h-4 rounded-full" 
+                      className="bg-green-600 h-3 rounded-full transition-all duration-500" 
                       style={{width: `${(data.bookings / 25) * 100}%`}}
                     ></div>
                   </div>
@@ -1448,72 +1497,88 @@ const OwnerDashboard = () => {
           </div>
         </div>
 
-        {/* Booking Calendar */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Today's Booking Calendar</h2>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2 px-4">Time</th>
-                  <th className="text-left py-2 px-4">Court 1</th>
-                  <th className="text-left py-2 px-4">Court 2</th>
-                  <th className="text-left py-2 px-4">Court 3</th>
-                  <th className="text-left py-2 px-4">Court 4</th>
-                </tr>
-              </thead>
-              <tbody>
-                {timeSlots.slice(0, 8).map(time => (
-                  <tr key={time} className="border-b">
-                    <td className="py-2 px-4 font-medium">{time}</td>
-                    <td className="py-2 px-4">
-                      {Math.random() > 0.5 ? (
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                          Booked
-                        </span>
-                      ) : (
-                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                          Available
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 px-4">
-                      {Math.random() > 0.5 ? (
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                          Booked
-                        </span>
-                      ) : (
-                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                          Available
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 px-4">
-                      {Math.random() > 0.5 ? (
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                          Booked
-                        </span>
-                      ) : (
-                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                          Available
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-2 px-4">
-                      {Math.random() > 0.5 ? (
-                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
-                          Booked
-                        </span>
-                      ) : (
-                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                          Available
-                        </span>
-                      )}
-                    </td>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Today's Calendar */}
+          <div className="card-enhanced p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Today's Schedule</h2>
+            <div className="table-enhanced">
+              <table className="min-w-full">
+                <thead>
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Time</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Court 1</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Court 2</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Court 3</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {timeSlots.slice(0, 6).map(time => (
+                    <tr key={time} className="border-b border-gray-100">
+                      <td className="py-3 px-4 font-medium text-gray-900">{time}</td>
+                      <td className="py-3 px-4">
+                        {Math.random() > 0.5 ? (
+                          <span className="status-badge-enhanced bg-green-100 text-green-800">
+                            Booked
+                          </span>
+                        ) : (
+                          <span className="status-badge-enhanced bg-gray-100 text-gray-600">
+                            Available
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {Math.random() > 0.5 ? (
+                          <span className="status-badge-enhanced bg-green-100 text-green-800">
+                            Booked
+                          </span>
+                        ) : (
+                          <span className="status-badge-enhanced bg-gray-100 text-gray-600">
+                            Available
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        {Math.random() > 0.5 ? (
+                          <span className="status-badge-enhanced bg-green-100 text-green-800">
+                            Booked
+                          </span>
+                        ) : (
+                          <span className="status-badge-enhanced bg-gray-100 text-gray-600">
+                            Available
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Bookings */}
+          <div className="card-enhanced p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Recent Bookings</h2>
+            <div className="space-y-4">
+              {recentBookings.map(booking => (
+                <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-semibold text-blue-600">
+                        {booking.user.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{booking.user}</h4>
+                      <p className="text-sm text-gray-600">{booking.court} • {booking.time}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-green-600">${booking.amount}</div>
+                    <div className="text-xs text-gray-500">1 hour</div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
