@@ -126,21 +126,28 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b">
+    <nav className="nav-enhanced">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-gray-900">QuickCourt</h1>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M10.5 3L12 2l1.5 1M21 3H3l1.5 1M21 3l-1.5 1" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">QuickCourt</h1>
+            </div>
           </div>
           
           {/* Role Switch */}
           <div className="hidden md:block">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500">Switch Role:</span>
+            <div className="flex items-center space-x-3">
+              <span className="text-sm text-gray-500 font-medium">View as:</span>
               <select 
                 value={role || 'user'} 
                 onChange={(e) => handleRoleSwitch(e.target.value)}
-                className="text-sm border rounded px-2 py-1"
+                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white font-medium focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="user">End User</option>
                 <option value="facility_owner">Facility Owner</option>
@@ -151,37 +158,42 @@ const Navigation = ({ currentPage, setCurrentPage, currentUser, setCurrentUser }
 
           {/* Navigation Menu */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-4">
+            <div className="ml-10 flex items-baseline space-x-1">
               {role === 'user' && (
                 <>
-                  <button onClick={() => setCurrentPage('home')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'home' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Home</button>
-                  <button onClick={() => setCurrentPage('venues')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'venues' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Venues</button>
-                  <button onClick={() => setCurrentPage('my-bookings')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'my-bookings' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>My Bookings</button>
-                  <button onClick={() => setCurrentPage('profile')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'profile' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Profile</button>
+                  <button onClick={() => setCurrentPage('home')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'home' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Home</button>
+                  <button onClick={() => setCurrentPage('venues')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'venues' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Venues</button>
+                  <button onClick={() => setCurrentPage('my-bookings')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'my-bookings' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>My Bookings</button>
+                  <button onClick={() => setCurrentPage('profile')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'profile' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Profile</button>
                 </>
               )}
               {role === 'facility_owner' && (
                 <>
-                  <button onClick={() => setCurrentPage('owner-dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'owner-dashboard' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Dashboard</button>
-                  <button onClick={() => setCurrentPage('facility-management')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'facility-management' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Facilities</button>
-                  <button onClick={() => setCurrentPage('court-management')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'court-management' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Courts</button>
-                  <button onClick={() => setCurrentPage('time-slot-management')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'time-slot-management' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Time Slots</button>
-                  <button onClick={() => setCurrentPage('booking-overview')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'booking-overview' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Bookings</button>
+                  <button onClick={() => setCurrentPage('owner-dashboard')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'owner-dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Dashboard</button>
+                  <button onClick={() => setCurrentPage('facility-management')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'facility-management' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Facilities</button>
+                  <button onClick={() => setCurrentPage('court-management')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'court-management' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Courts</button>
+                  <button onClick={() => setCurrentPage('time-slot-management')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'time-slot-management' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Time Slots</button>
+                  <button onClick={() => setCurrentPage('booking-overview')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'booking-overview' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Bookings</button>
                 </>
               )}
               {role === 'admin' && (
                 <>
-                  <button onClick={() => setCurrentPage('admin-dashboard')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'admin-dashboard' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Dashboard</button>
-                  <button onClick={() => setCurrentPage('facility-approval')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'facility-approval' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Facility Approval</button>
-                  <button onClick={() => setCurrentPage('user-management')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'user-management' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Users</button>
-                  <button onClick={() => setCurrentPage('reports-moderation')} className={`px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'reports-moderation' ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'}`}>Reports</button>
+                  <button onClick={() => setCurrentPage('admin-dashboard')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'admin-dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Dashboard</button>
+                  <button onClick={() => setCurrentPage('facility-approval')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'facility-approval' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Facility Approval</button>
+                  <button onClick={() => setCurrentPage('user-management')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'user-management' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Users</button>
+                  <button onClick={() => setCurrentPage('reports-moderation')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${currentPage === 'reports-moderation' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'}`}>Reports</button>
                 </>
               )}
             </div>
           </div>
 
-          <div className="flex items-center">
-            <span className="text-sm text-gray-700">{currentUser?.name}</span>
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+              <span className="text-sm font-semibold text-gray-600">
+                {currentUser?.name?.charAt(0)?.toUpperCase()}
+              </span>
+            </div>
+            <span className="text-sm font-medium text-gray-700">{currentUser?.name}</span>
           </div>
         </div>
       </div>
