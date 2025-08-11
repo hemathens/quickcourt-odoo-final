@@ -261,8 +261,24 @@ ODOO FINAL/
 Roadmap (Diagram form + timeline)
 =================================
 
-* The roadmap is shown as a phased diagram (left → right) plus a short timeline for priorities:
-      `
+```
+[ Customer / Owner / Admin ]
+          |
+   Next.js 15 (SSR/SSG)
+ React + Tailwind + Framer Motion
+          |
+       API Layer
+ Node.js (NestJS / Express)
+          |
+   Prisma ORM  → PostgreSQL (tstzrange + EXCLUDE)
+          |                    |
+       Redis (Upstash)   Cloudinary
+          |                    |
+   Stripe / Razorpay     Images & Avatars
+          |
+   GitHub Actions CI/CD
+   Deploy: Vercel (frontend) + Render (backend)
+```
 
 * **Phase 0 — MVP (24h)**
     
