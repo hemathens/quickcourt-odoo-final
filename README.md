@@ -1,25 +1,3 @@
-## QuickCourt Dev Notes
-
-Run backend:
-
-```
-cd backend
-python -m pip install -r requirements.txt
-uvicorn server:app --reload --port 8000
-```
-
-API base: `http://localhost:8000/api`
-
-Run frontend:
-
-```
-cd frontend
-yarn install
-yarn start
-```
-
-Set CORS via `CORS_ORIGINS` if needed; Mongo is optional.
-=======
 QuickCourt 
 ================
 
@@ -283,24 +261,8 @@ ODOO FINAL/
 Roadmap (Diagram form + timeline)
 =================================
 
-```
-[ Customer / Owner / Admin ]
-          |
-   Next.js 15 (SSR/SSG)
- React + Tailwind + Framer Motion
-          |
-       API Layer
- Node.js (NestJS / Express)
-          |
-   Prisma ORM  → PostgreSQL (tstzrange + EXCLUDE)
-          |                    |
-       Redis (Upstash)   Cloudinary
-          |                    |
-   Stripe / Razorpay     Images & Avatars
-          |
-   GitHub Actions CI/CD
-   Deploy: Vercel (frontend) + Render (backend)
-```
+* The roadmap is shown as a phased diagram (left → right) plus a short timeline for priorities:
+      `
 
 * **Phase 0 — MVP (24h)**
     
