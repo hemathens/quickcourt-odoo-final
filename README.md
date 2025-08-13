@@ -1,29 +1,29 @@
-# QuickCourt
+# 🏏 QuickCourt
 
 **A local sports booking platform for customers, facility owners, and admins — built as a fast, scalable MVP for Odoo Hackathon 2025.**
 
 ---
 
-## Project Overview
+## 📖 Project Overview
 
 QuickCourt enables users to **discover sports venues, check real-time court availability, and book instantly** — all from a mobile-friendly interface. Facility owners can manage their venues, while admins keep the platform safe and growing.
 
-**User Roles:**  
-- **Customer** — Search, book, and manage sports court reservations.  
-- **Facility Owner** — Create and manage venues, courts, and schedules.  
-- **Admin** — Approve venues, view analytics, and moderate content.
+**👥 User Roles:**  
+-  **Customer** — Search, book, and manage sports court reservations.  
+-  **Facility Owner** — Create and manage venues, courts, and schedules.  
+-  **Admin** — Approve venues, view analytics, and moderate content.
 
-**Design Goals:**  
-- Zero double-bookings (transaction-safe).
-- Fast, intuitive booking flow.
-- Mobile-first design for on-the-go users.
-- Extendable for ERP/Odoo integration.
+**🎯 Design Goals:**  
+-  Zero double-bookings (transaction-safe)  
+-  Fast, intuitive booking flow  
+-  Mobile-first design for on-the-go users  
+-  Extendable for ERP/Odoo integration  
 
 ---
 
-## Team & Roles
+## 👨‍💻 Team & Roles
 
-**Team Number:-** 331
+**🏆 Team Number:** 331
 
 | Member | GitHub | Responsibilities |
 | ------ | ------ | ---------------- |
@@ -32,84 +32,84 @@ QuickCourt enables users to **discover sports venues, check real-time court avai
 
 ---
 
-## Key Features
+## ✨ Key Features
 
-**Customer**
-- Search & filter venues by sport, price, and rating.
-- Real-time court availability calendar.
-- Book & cancel slots (configurable cancellation policy).
-- Booking history with quick actions.
+**🏃 Customer**
+-  Search & filter venues by sport, price, and rating  
+-  Real-time court availability calendar  
+-  Book & cancel slots (configurable cancellation policy)  
+-  Booking history with quick actions  
 
-**Facility Owner**
-- Create/manage venues & courts.
-- Define availability, block maintenance slots.
-- Dashboard with bookings list, earnings, and peak hours.
+**🏟️ Facility Owner**
+-  Create/manage venues & courts  
+-  Define availability, block maintenance slots  
+-  Dashboard with bookings list, earnings, and peak hours  
 
-**Admin**
-- Approve/reject new venues.
-- View platform metrics and manage reports.
-- Moderate reviews and content.
+** Admin**
+-  Approve/reject new venues  
+-  View platform metrics and manage reports  
+-  Moderate reviews and content  
 
-**System**
-- Prevent overlapping bookings with PostgreSQL range constraints.
-- Real-time updates via Redis locks & subscriptions.
-- Cloudinary image uploads.
-- Background jobs with BullMQ.
-- Simulated payments (ready for Stripe/Razorpay integration).
+**🖥️ System**
+-  Prevent overlapping bookings with PostgreSQL range constraints  
+-  Real-time updates via Redis locks & subscriptions  
+-  Cloudinary image uploads  
+-  Background jobs with BullMQ  
+-  Simulated payments (ready for Stripe/Razorpay integration)  
 
 ---
 
-## Tech Stack
+## 🛠 Tech Stack
 
 | Technology                        | Usage |
 | --------------------------------- | ----- |
-| **Next.js 15 (App Router)**       | Frontend SSR/SSG, routing |
-| **React**                         | UI components |
-| **Tailwind CSS**                  | Styling & responsiveness |
-| **Framer Motion**                 | Animations |
-| **NestJS / Express.js**           | Backend API |
-| **PostgreSQL**                    | Database with exclusion constraints |
-| **Prisma ORM**                    | DB access & migrations |
-| **Redis (Upstash)**               | Caching & concurrency locks |
-| **BullMQ**                        | Background job processing |
-| **Cloudinary**                    | Image storage |
-| **Stripe / Razorpay (simulated)** | Payment flow |
-| **Vercel**                        | Frontend hosting |
-| **Render**                        | Backend hosting |
-| **GitHub Actions**                | CI/CD |
-| **Sentry**                        | Error tracking |
+|  **Next.js 15 (App Router)**       | Frontend SSR/SSG, routing |
+|  **React**                         | UI components |
+|  **Tailwind CSS**                  | Styling & responsiveness |
+|  **Framer Motion**                 | Animations |
+|  **NestJS / Express.js**           | Backend API |
+|  **PostgreSQL**                    | Database with exclusion constraints |
+|  **Prisma ORM**                    | DB access & migrations |
+|  **Redis (Upstash)**               | Caching & concurrency locks |
+|  **BullMQ**                        | Background job processing |
+|  **Cloudinary**                    | Image storage |
+|  **Stripe / Razorpay (simulated)** | Payment flow |
+|  **Vercel**                         | Frontend hosting |
+|  **Render**                        | Backend hosting |
+|  **GitHub Actions**                | CI/CD |
+|  **Sentry**                        | Error tracking |
 
 ---
 
-## Database Schema
+## 🗂 Database Schema
 
 **Entities:**  
-- **User** — Roles: CUSTOMER, OWNER, ADMIN.  
-- **Venue** — Linked to Owner.  
-- **Court** — Linked to Venue.  
-- **Booking** — Linked to User & Court, stores `tstzrange`.  
-- **AvailabilityBlock** — Owner maintenance & block slots.  
-- **Review** — Customer feedback.  
-- **Payment** — Linked to Booking.
+-  **User** — Roles: CUSTOMER, OWNER, ADMIN  
+-  **Venue** — Linked to Owner  
+-  **Court** — Linked to Venue  
+-  **Booking** — Linked to User & Court, stores `tstzrange`  
+-  **AvailabilityBlock** — Owner maintenance & block slots  
+-  **Review** — Customer feedback  
+-  **Payment** — Linked to Booking  
 
-> Prisma snippet and ER diagram in full schema section above.
-
----
-
-## Booking Flow
-
-1. Customer selects venue & court → chooses slot.
-2. Frontend sends booking request to backend.
-3. Backend:
-   - Starts transaction.
-   - Inserts booking with `tstzrange` constraint.
-   - Confirms booking if slot available; otherwise, rejects with 409.
-4. Payment processed (simulated).
-5. Owners get notified via dashboard (WebSocket/polling).
+> 📌 Prisma snippet and ER diagram in full schema section above.
 
 ---
 
-## Folder Structure
+## 🔄 Booking Flow
+
+1.  Customer selects venue & court → chooses slot  
+2.  Frontend sends booking request to backend  
+3.  Backend:  
+   -  Starts transaction  
+   -  Inserts booking with `tstzrange` constraint  
+   -  Confirms booking if slot available; ❌ rejects with 409 otherwise  
+4.  Payment processed (simulated)  
+5.  Owners get notified via dashboard (WebSocket/polling)  
+
+---
+
+## 📂 Folder Structure
 ```
 quickcourt/
 │
@@ -126,65 +126,44 @@ quickcourt/
 └── package.json
 ```
 ---
+
+---
+
 ## 🔍 Roles & Navigation
 
 QuickCourt tailors its experience to three main roles, each with focused UI, navigation, and features:
 
-### 🏃 End Users (Customers)
-
-* **Browse Venues**: `/venues` – Search & filter by sport type, price, rating, and location.  
-* **Venue Detail & Courts**: `/venues/:id` – View court details, photos, ratings, and reviews.  
-* **Availability Calendar**: Inline on venue pages – See real-time available slots.  
-* **My Bookings**: `/my-bookings` – View upcoming bookings, booking history, and quick cancel/reschedule options.  
-* **Booking Flow**: `/book/:courtId` – Select date & time, confirm slot, and pay.  
-* **Reviews**: Leave ratings and comments after completed bookings.  
-* **Notifications**: In-app alerts & email confirmations for booking status changes.
-
-### 🏟️ Facility Owners
-
-* **Owner Dashboard**: `/owner/dashboard` – Overview of upcoming bookings, earnings, and popular time slots.  
-* **Manage Venues**: `/owner/venues` – Create, edit, and delete venue listings.  
-* **Manage Courts**: `/owner/courts` – Add courts, set sport type, pricing, and capacity.  
-* **Set Availability**: `/owner/availability` – Define operating hours and block slots for maintenance or private events.  
-* **Booking Management**: `/owner/bookings` – Approve, reject, or cancel bookings with reason tracking.  
-* **Analytics**: `/owner/analytics` – Peak hours, occupancy rate, and revenue trends.  
-* **Media Uploads**: Upload venue and court images via Cloudinary integration.
-
-### ⚙️ Administrators
-
-* **Admin Dashboard**: `/admin` – Platform-wide overview: total bookings, active venues, and earnings summary.  
-* **Venue Approvals**: `/admin/pending-venues` – Approve or reject new facility registrations.  
-* **User Management**: `/admin/users` – View, suspend, or promote/demote users.  
-* **Platform Metrics**: `/admin/metrics` – Reports on bookings, cancellations, and payment success rates.  
-* **Moderation**: `/admin/moderation` – Remove inappropriate content or reviews.  
-* **Configuration**: `/admin/settings` – Manage cancellation policies, supported sports list, and platform fees.  
-* **Reports Export**: Generate CSV/PDF exports for internal use or ERP integration.
+| Role                  | Features                                                                                                                                                                                                                               | Navigation                                                 |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| 🧑‍💼 **End User**    | • **Search & Book Courts** – View available courts, select date/time<br>• **My Bookings** – See upcoming & past bookings<br>• **Profile Management** – Update personal info<br>• **Notifications** – Booking confirmations & reminders | `/search`<br>`/my-bookings`<br>`/profile`                  |
+| 🏢 **Facility Owner** | • **Court Management** – Add, edit, or remove courts & schedules<br>• **Booking Overview** – Track bookings & cancellations<br>• **Earnings Dashboard** – View revenue analytics<br>• **Owner Settings** – Update facility info        | `/owner/courts`<br>`/owner/bookings`<br>`/owner/analytics` |
+| ⚙️ **Administrator**  | • **Admin Dashboard** – Manage system & monitor activity<br>• **User Management** – Add/remove users & assign roles<br>• **Reports** – Export booking stats & revenue data<br>• **System Config** – Control platform settings          | `/admin`<br>`/admin/users`<br>`/admin/reports`             |
 
 ---
 
-## Deployment
+## 🚀 Deployment
 
-- **Frontend** — Vercel (auto-deploy from main branch).
-- **Backend** — Render/Fly/Railway (Docker or managed Node).
-- **Database** — Supabase/Railway PostgreSQL.
-- **Redis** — Upstash.
-- **CI/CD** — GitHub Actions.
-
----
-
-## API Reference (Essential)
-
-- `POST /api/auth/signup` — Register user.  
-- `POST /api/auth/login` — Authenticate & return JWT.  
-- `GET /api/venues` — Search venues.  
-- `POST /api/bookings` — Create booking.  
-- `POST /api/bookings/:id/cancel` — Cancel booking.  
-- `GET /api/owner/bookings` — Owner dashboard data.  
-- `GET /api/admin/pending-venues` — Admin approvals.
+- **Frontend** — Vercel (auto-deploy from main branch)  
+- **Backend** — Render/Fly/Railway (Docker or managed Node)  
+- **Database** — Supabase/Railway PostgreSQL  
+- **Redis** — Upstash  
+- **CI/CD** — GitHub Actions  
 
 ---
 
-## Demo Accounts
+## 📡 API Reference (Essential)
+
+- `POST /api/auth/signup` —  Register user  
+- `POST /api/auth/login` —  Authenticate & return JWT  
+- `GET /api/venues` —  Search venues  
+- `POST /api/bookings` —  Create booking  
+- `POST /api/bookings/:id/cancel` —  Cancel booking  
+- `GET /api/owner/bookings` —  Owner dashboard data  
+- `GET /api/admin/pending-venues` —  Admin approvals  
+
+---
+
+## 🧪 Demo Accounts
 
 - **Customer**: `customer@quickcourt.test` / `password123`  
 - **Owner**: `owner@quickcourt.test` / `password123`  
@@ -192,7 +171,7 @@ QuickCourt tailors its experience to three main roles, each with focused UI, nav
 
 ---
 
-## Contact
+## 📬 Contact
 
 ### • **Hem Patel**  
 [![Kaggle Profile](https://img.shields.io/badge/Kaggle-hem%20ajit%20patel-20BEFF?logo=kaggle)](https://www.kaggle.com/hemajitpatel)  [![LinkedIn](https://img.shields.io/badge/LinkedIn-Hem%20Ajit%20Patel-0A66C2?logo=linkedin)](https://www.linkedin.com/in/hem-patel19)  [![GitHub](https://img.shields.io/badge/GitHub-hemathens-181717?logo=github)](https://github.com/hemathens)
@@ -200,4 +179,4 @@ QuickCourt tailors its experience to three main roles, each with focused UI, nav
 ### • **Laukik Rajput**  
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Laukik%20Rajput-0A66C2?logo=linkedin)](https://www.linkedin.com/in/laukik-rajput-95bb48300)  [![GitHub](https://img.shields.io/badge/GitHub-lokixshr-181717?logo=github)](https://github.com/lokixshr)
 
-For demo requests & support, reach out via our hackathon Slack channel.
+📢 For demo requests & support, reach out via our hackathon Slack channel.
