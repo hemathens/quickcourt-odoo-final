@@ -125,7 +125,40 @@ quickcourt/
 ├── README.md
 └── package.json
 ```
+---
+## 🔍 Roles & Navigation
 
+QuickCourt tailors its experience to three main roles, each with focused UI, navigation, and features:
+
+### 🏃 End Users (Customers)
+
+* **Browse Venues**: `/venues` – Search & filter by sport type, price, rating, and location.  
+* **Venue Detail & Courts**: `/venues/:id` – View court details, photos, ratings, and reviews.  
+* **Availability Calendar**: Inline on venue pages – See real-time available slots.  
+* **My Bookings**: `/my-bookings` – View upcoming bookings, booking history, and quick cancel/reschedule options.  
+* **Booking Flow**: `/book/:courtId` – Select date & time, confirm slot, and pay.  
+* **Reviews**: Leave ratings and comments after completed bookings.  
+* **Notifications**: In-app alerts & email confirmations for booking status changes.
+
+### 🏟️ Facility Owners
+
+* **Owner Dashboard**: `/owner/dashboard` – Overview of upcoming bookings, earnings, and popular time slots.  
+* **Manage Venues**: `/owner/venues` – Create, edit, and delete venue listings.  
+* **Manage Courts**: `/owner/courts` – Add courts, set sport type, pricing, and capacity.  
+* **Set Availability**: `/owner/availability` – Define operating hours and block slots for maintenance or private events.  
+* **Booking Management**: `/owner/bookings` – Approve, reject, or cancel bookings with reason tracking.  
+* **Analytics**: `/owner/analytics` – Peak hours, occupancy rate, and revenue trends.  
+* **Media Uploads**: Upload venue and court images via Cloudinary integration.
+
+### ⚙️ Administrators
+
+* **Admin Dashboard**: `/admin` – Platform-wide overview: total bookings, active venues, and earnings summary.  
+* **Venue Approvals**: `/admin/pending-venues` – Approve or reject new facility registrations.  
+* **User Management**: `/admin/users` – View, suspend, or promote/demote users.  
+* **Platform Metrics**: `/admin/metrics` – Reports on bookings, cancellations, and payment success rates.  
+* **Moderation**: `/admin/moderation` – Remove inappropriate content or reviews.  
+* **Configuration**: `/admin/settings` – Manage cancellation policies, supported sports list, and platform fees.  
+* **Reports Export**: Generate CSV/PDF exports for internal use or ERP integration.
 
 ---
 
